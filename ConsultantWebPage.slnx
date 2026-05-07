@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="ConsultantWebPage.API/ConsultantWebPage.API.csproj" />
+  <Project Path="ConsultantWebPage.Contracts/ConsultantWebPage.Contracts.csproj" />
+  <Project Path="ConsultantWebPage.Core/ConsultantWebPage.Core.csproj" />
+  <Project Path="ConsultantWebPage.Repo/ConsultantWebPage.Repo.csproj" />
+  <Project Path="ConsultantWebPage.Services/ConsultantWebPage.Services.csproj" />
+</Solution>
