@@ -1,9 +1,10 @@
-using System;
+using System.Threading.Tasks;
+using ConsultantWebPage.Core.Common;
 using ConsultantWebPage.Core.Models;
 
 namespace ConsultantWebPage.Contracts.Interfaces.Repo;
 
 public interface ICategoryTypeRepository : IGenericRepository<CategoryType>
 {
-    Task<CategoryType?> GetByNameAsync(string TypeName);
+    Task<Result<CategoryType>> GetByNameAsync(string TypeName);
 }

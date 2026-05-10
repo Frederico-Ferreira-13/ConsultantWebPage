@@ -22,13 +22,24 @@ CREATE TABLE CategoryType (
 );
 GO
 
+CREATE TABLE Category (
+    CategoriesId INT PRIMARY KEY IDENTITY(1,1),
+    CategoryName NVARCHAR(100) NOT NULL,
+    CategoryTypeId INT NOT NULL,
+    ParentCategoryId INT NULL,
+    CONSTRAINT FK_Category_Type FOREIGN KEY (CategoryTypeId) REFERENCES CategoryType(CategoryTypeId),
+    CONSTRAINT FK_Category_Parent FOREIGN KEY (ParentCategoryId) REFERENCES Category(CategoriesId)
+);
+GO
+
 CREATE TABLE Users (
     UserId INT PRIMARY KEY IDENTITY(1,1),
     UsersRoleId INT NOT NULL,
+    LeadsId INT NOT NULL,
     FullName NVARCHAR(255) NOT NULL,
     Email NVARCHAR(255) UNIQUE NOT NULL,
     IsActive BIT DEFAULT 1,
-    CONSTRAINT FK_Users_Roles FOREIGN KEY (UsersRoleId) REFERENCES UserRoles(UsersRoleId)
+    CONSTRAINT FK_Users_Roles FOREIGN KEY (UsersRoleId) REFERENCES UserRoles(UsersRoleId)    
 );
 GO
 
@@ -53,16 +64,6 @@ CREATE TABLE AboutMe (
 );
 GO
 
-CREATE TABLE Category (
-    CategoriesId INT PRIMARY KEY IDENTITY(1,1),
-    CategoryName NVARCHAR(100) NOT NULL,
-    CategoryTypeId INT NOT NULL,
-    ParentCategoryId INT NULL,
-    CONSTRAINT FK_Category_Type FOREIGN KEY (CategoryTypeId) REFERENCES CategoryType(CategoryTypeId),
-    CONSTRAINT FK_Category_Parent FOREIGN KEY (ParentCategoryId) REFERENCES Category(CategoriesId)
-);
-GO
-
 CREATE TABLE RealEstate (
     RealEstateId INT PRIMARY KEY IDENTITY(1,1),
     RealEstateTypeId INT NOT NULL,
@@ -82,7 +83,7 @@ CREATE TABLE RealEstate (
 );
 GO
 
-CREATE TABLE RealEstateCategories_Link (
+CREATE TABLE RealEstateCategories (
     RealEstateId INT NOT NULL,
     CategoriesId INT NOT NULL,
     PRIMARY KEY (RealEstateId, CategoriesId),
@@ -101,17 +102,6 @@ CREATE TABLE RealEstateMedia (
 );
 GO
 
-CREATE TABLE Testimonials (
-    TestimonialId INT PRIMARY KEY IDENTITY(1,1),
-    ConsultantId INT NOT NULL,
-    ClientName NVARCHAR(255),
-    TestimonialText NVARCHAR(MAX),
-    Rating INT CHECK (Rating BETWEEN 1 AND 5),
-    IsVisible BIT DEFAULT 0,
-    CONSTRAINT FK_Testimonials_Consultant FOREIGN KEY (ConsultantId) REFERENCES Users(UserId)
-);
-GO
-
 CREATE TABLE Leads (
     InquiryId INT PRIMARY KEY IDENTITY(1,1),
     RealEstateId INT NOT NULL,
@@ -122,6 +112,17 @@ CREATE TABLE Leads (
     Status NVARCHAR(50),
     CreatedAt DATETIME DEFAULT GETDATE(),
     CONSTRAINT FK_Leads_RealEstate FOREIGN KEY (RealEstateId) REFERENCES RealEstate(RealEstateId)
+);
+GO
+
+CREATE TABLE Testimonials (
+    TestimonialId INT PRIMARY KEY IDENTITY(1,1),
+    ConsultantId INT NOT NULL,
+    ClientName NVARCHAR(255),
+    TestimonialText NVARCHAR(MAX),
+    Rating INT CHECK (Rating BETWEEN 1 AND 5),
+    IsVisible BIT DEFAULT 0,
+    CONSTRAINT FK_Testimonials_Consultant FOREIGN KEY (ConsultantId) REFERENCES Users(UserId)
 );
 GO
 
@@ -190,4 +191,15 @@ CREATE TABLE Posts (
     CreatedAt DATETIME DEFAULT GETDATE(),
     CONSTRAINT FK_Posts_Author FOREIGN KEY (AuthorId) REFERENCES Users(UserId)
 );
+GO
+
+ALTER TABLE Users
+ADD CONSTRAINT FK_Users_Leads FOREIGN KEY (LeadsId) REFERENCES Leads(InquiryId);
+GO
+
+ALTER TABLE PropertyEvaluations
+ADD UserId INT NULL;
+
+ALTER TABLE PropertyEvaluations
+ADD CONSTRAINT FK_Evaluations_Client FOREIGN KEY (UserId) REFERENCES Users(UserId);
 GO

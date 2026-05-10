@@ -1,14 +1,15 @@
 using System;
+using System.Collections.Generic;
 using ConsultantWebPage.Core.Common;
 
 namespace ConsultantWebPage.Contracts.Interfaces.Repo;
 
 public interface IGenericRepository<TEntity> where TEntity : class, IEntity
-{
-    Task CreateAddAssync(TEntity entity);
-    Task<TEntity?> GetByIdAsync(int id);
-    Task<IEnumerable<TEntity>> GetAllAsync(); 
-    Task AddAsync(TEntity entity);
-    Task UpdateAsync(TEntity entity);
-    Task DeleteAsync(int id);
+{    
+    Task<Result<TEntity>> GetByIdAsync(int id);
+    Task<Result<IEnumerable<TEntity>>> GetAllAsync();
+    Task<Result> AddAsync(TEntity entity);
+    Task<Result> UpdateAsync(TEntity entity);
+    Task<Result> DeleteAsync(int id);
+    Task<bool> ExistsAsync(int id);
 }

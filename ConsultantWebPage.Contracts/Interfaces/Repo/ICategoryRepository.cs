@@ -1,12 +1,14 @@
-using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using ConsultantWebPage.Core.Common;
 using ConsultantWebPage.Core.Models;
 
 namespace ConsultantWebPage.Contracts.Interfaces.Repo;
 
 public interface ICategoryRepository : IGenericRepository<Category>
 {
-    Task<Category?> GetCategoryByNameAndAccount(string categoryName, int accountId);
-    Task<List<Category>> GetRootCategoriesByAccount(int accountId);
-    Task<Category?> GetByIdWithSubCategories(int categoryId, int accountId);
-    Task<Category?> ReadByIdAndAccountAsync(int id, int accountId);
+    Task<Result<Category>> GetCategoryByNameAndAccount(string categoryName, int accountId);
+    Task<Result<IEnumerable<Category>>> GetRootCategoriesByAccount(int accountId);
+    Task<Result<Category>> GetByIdWithSubCategories(int categoryId, int accountId);
+    Task<Result<Category>> GetByIdAndAccountAsync(int id, int accountId);
 }

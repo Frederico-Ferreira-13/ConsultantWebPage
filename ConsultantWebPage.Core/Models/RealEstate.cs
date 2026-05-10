@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ConsultantWebPage.Core.Common;
+using ConsultantWebPage.Core.Models.ValueObjects;
 
 namespace ConsultantWebPage.Core.Models
 {
@@ -22,12 +23,10 @@ namespace ConsultantWebPage.Core.Models
 
         [MaxLength(100)]
         public string ExternalReferenceId { get; protected set; } = string.Empty;
+        
+        public Money Price { get; protected set; } = null!;
 
-        [Column(TypeName = "decimal(18,2)")]
-        public decimal Price { get; protected set; }
-
-        [MaxLength(100)]
-        public string City { get; protected set; } = string.Empty;
+        public Address Address { get; protected set; } = null!;
 
         [MaxLength(50)]
         public string Status { get; protected set; } = string.Empty;
@@ -44,11 +43,9 @@ namespace ConsultantWebPage.Core.Models
 
         private RealEstate() { }
 
-        public RealEstate(int realEstateTypeId, int consultantId, string title, string thumbnailUrl,
-            string externalSourceUrl, string externalReferenceId, decimal price, string city, string status, bool isFeatured)
+        private RealEstate(int realEstateTypeId, int consultantId, string title, string thumbnailUrl,
+            string externalSourceUrl, string externalReferenceId, Money price, Address address, string status, bool isFeatured)
         {
-            ValidateRealEstate(realEstateTypeId, consultantId, title, thumbnailUrl, price, city);
-
             RealEstateTypeId = realEstateTypeId;
             ConsultantId = consultantId;
             Title = title;
@@ -56,26 +53,38 @@ namespace ConsultantWebPage.Core.Models
             ExternalSourceUrl = externalSourceUrl;
             ExternalReferenceId = externalReferenceId;
             Price = price;
-            City = city;
+            Address = address;
             Status = status;
             IsFeatured = isFeatured;
             CreatedAt = DateTime.UtcNow;
             LastCheckDate = DateTime.UtcNow;
         }
 
-        public void UpdateRealEstate(int realEstateTypeId, int consultantId, string title, string thumbnailUrl,
-            string externalSourceUrl, string externalReferenceId, decimal price, string city, string status, bool isFeatured)
+        public static Result<RealEstate> Create(int realEstateTypeId, int consultantId, string title, string thumbnailUrl,
+            string externalSourceUrl, string externalReferenceId, Money price, Address address, string status, bool isFeatured)
         {
-            ValidateRealEstate(realEstateTypeId, consultantId, title, thumbnailUrl, price, city);
+            if (realEstateTypeId <= 0) return Error.Validation("Tipo de imóvel inválido.");
+            if (consultantId <= 0) return Error.Validation("Consultor inválido.");
+            if (string.IsNullOrWhiteSpace(title)) return Error.Validation("O título é obrigatório.");
+            if (price == null || price.Amount < 0) return Error.Validation("O preço é inválido.");
+            if (address == null) return Error.Validation("A morada é obrigatória.");
 
+            return new RealEstate(realEstateTypeId, consultantId, title, thumbnailUrl, 
+                                 externalSourceUrl, externalReferenceId, price, address, status, isFeatured);
+        }
+
+        public void UpdateRealEstate(int realEstateTypeId, int consultantId, string title, string thumbnailUrl,
+            string externalSourceUrl, string externalReferenceId, Money price, Address address, string status, bool isFeatured)
+        {            
+            if (price != null) Price = price;
+            
             RealEstateTypeId = realEstateTypeId;
             ConsultantId = consultantId;
             Title = title;
             ThumbnailUrl = thumbnailUrl;
             ExternalSourceUrl = externalSourceUrl;
             ExternalReferenceId = externalReferenceId;
-            Price = price;
-            City = city;
+            Address = address;
             Status = status;
             IsFeatured = isFeatured;
             LastCheckDate = DateTime.UtcNow;
@@ -94,14 +103,6 @@ namespace ConsultantWebPage.Core.Models
             RealEstateId = id;
         }
 
-        public bool GetIsActive() => Status == "Available";
-
-        private void ValidateRealEstate(int realEstateTypeId, int consultantId, string title, string thumbnailUrl, decimal price, string city)
-        {
-            if (realEstateTypeId <= 0) throw new ArgumentException("Tipo de imóvel inválido.");
-            if (consultantId <= 0) throw new ArgumentException("Consultor inválido.");
-            if (string.IsNullOrWhiteSpace(title)) throw new ArgumentException("O título é obrigatório.");
-            if (price < 0) throw new ArgumentException("O preço não pode ser negativo.");
-        }
+        public bool GetIsActive() => Status == "Available";        
     }
 }
