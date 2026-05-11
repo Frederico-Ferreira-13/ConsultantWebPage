@@ -10,8 +10,9 @@ namespace ConsultantWebPage.Core.Models
     {
         [Key]
         public int InquiryId { get; protected set; }
-        public int RealEstateId { get; protected set; }
 
+        public int? RealEstateId { get; protected set; }
+        public int? ConsultantId { get; protected set; }
 
         [Required]
         [MaxLength(255)]
@@ -31,23 +32,29 @@ namespace ConsultantWebPage.Core.Models
 
         private Leads() { }
 
-        private Leads(int realEstateId, string clientName, ContactInfo contact, string message)
+        private Leads(int? realEstateId, int? consultantId, string clientName, ContactInfo contact, string message)
         {
             RealEstateId = realEstateId;
+            ConsultantId = consultantId;
             ClientName = clientName;
             Contact = contact;
             Message = message;
-            Status = "New";
+            Status = "Novo";
             CreatedAt = DateTime.UtcNow;
         }
 
-        public static Result<Leads> Create(int realEstateId, string clientName, ContactInfo contact, string message)
+        public static Result<Leads> Create(int? realEstateId, int? consultantId, string clientName, ContactInfo contact, string message)
         {
-            if (realEstateId <= 0) return Error.Validation("Imóvel inválido.");
             if (string.IsNullOrWhiteSpace(clientName)) return Error.Validation("Nome do cliente obrigatório.");
             if (contact == null) return Error.Validation("Informação de contacto obrigatória.");
+                        
+            return new Leads(realEstateId, consultantId, clientName, contact, message);
+        }
 
-            return new Leads(realEstateId, clientName, contact, message);
+        public void AssignToConsultant(int consultantId)
+        {
+            if (consultantId <= 0) throw new ArgumentException("ID de consultor inválido.");
+            ConsultantId = consultantId;
         }
 
         public void UpdateStatus(string newStatus)
@@ -69,9 +76,6 @@ namespace ConsultantWebPage.Core.Models
             InquiryId = id;
         }
 
-        public bool GetIsActive() => Status != "Closed"; // Assuming a lead is active unless its status is "Closed"
-
-        
+        public bool GetIsActive() => Status != "Fechado" && Status != "Closed";
     }
 }
-

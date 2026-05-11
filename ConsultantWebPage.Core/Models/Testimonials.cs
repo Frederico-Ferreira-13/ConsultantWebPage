@@ -21,20 +21,23 @@ namespace ConsultantWebPage.Core.Models
         public int Rating { get; protected set; }
         public bool IsVisible { get; protected set; }
 
+        public DateTime CreatedAt { get; protected set; }
+
         [ForeignKey("ConsultantId")]
         public virtual Users? Consultant { get; private set; }
 
         private Testimonials() { }
 
-        public Testimonials(int consultantId, string clientName, string testimonialText, int rating, bool isVisible)
+        public Testimonials(int consultantId, string? clientName, string? testimonialText, int rating, bool isVisible)
         {
-            ValidateTestimonial(consultantId, clientName, testimonialText, rating);
+            ValidateTestimonial(consultantId, rating);
 
             ConsultantId = consultantId;
             ClientName = clientName;
             TestimonialText = testimonialText;
             Rating = rating;
             IsVisible = isVisible;
+            CreatedAt = DateTime.UtcNow;
         }
 
         public void UpdateVisibility(bool isVisible)
@@ -42,17 +45,12 @@ namespace ConsultantWebPage.Core.Models
             IsVisible = isVisible;
         }
 
-        private void ValidateTestimonial(int consultantId, string clientName, string testimonialText, int rating)
+        private void ValidateTestimonial(int consultantId, int rating)
         {
             if (consultantId <= 0)
                 throw new ArgumentException("Consultant ID must be a positive integer.");
 
-            if (string.IsNullOrWhiteSpace(clientName))
-                throw new ArgumentException("Client name cannot be empty.");
-
-            if (string.IsNullOrWhiteSpace(testimonialText))
-                throw new ArgumentException("Testimonial text cannot be empty.");
-
+            
             if (rating < 1 || rating > 5)
                 throw new ArgumentException("Rating must be between 1 and 5.");
         }

@@ -44,7 +44,7 @@ namespace ConsultantWebPage.Core.Models
 
             AuthorId = authorId;
             Title = title;
-            Slug = slug.ToLower().Replace(" ", "-"); // Slugs costumam ser minúsculos e sem espaços
+            Slug = slug.ToLower().Trim().Replace(" ", "-"); // Slugs costumam ser minúsculos e sem espaços
             Content = content;
             Summary = summary;
             ImageUrl = imageUrl;
@@ -58,7 +58,7 @@ namespace ConsultantWebPage.Core.Models
             ValidatePost(AuthorId, title, slug, content);
 
             Title = title;
-            Slug = slug.ToLower().Replace(" ", "-");
+            Slug = slug.ToLower().Trim().Replace(" ", "-");
             Content = content;
             Summary = summary;
             ImageUrl = imageUrl;

@@ -73,5 +73,3 @@ namespace ConsultantWebPage.Core.Models
         public bool GetIsActive() => true; 
     }
 }
-
-

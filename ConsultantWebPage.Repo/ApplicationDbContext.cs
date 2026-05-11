@@ -15,8 +15,11 @@ public class ApplicationDbContext : DbContext
     public DbSet<RealEstateType> RealEstateTypes { get; set; }
     public DbSet<RealEstateMedia> RealEstateMedia { get; set; }
     public DbSet<RealEstateCategories> RealEstateCategories { get; set; }
+    public DbSet<Category> Categories { get; set; }
+    public DbSet<CategoryType> CategoryTypes { get; set; }
     
     // Interação e Marketing
+    public DbSet<AboutMe> AboutMe { get; set; }
     public DbSet<Leads> Leads { get; set; }
     public DbSet<PropertyEvaluations> PropertyEvaluations { get; set; }
     public DbSet<Testimonials> Testimonials { get; set; }
@@ -108,5 +111,25 @@ public class ApplicationDbContext : DbContext
         // 7. Testemunhos e Posts
         modelBuilder.Entity<Testimonials>().ToTable("Testimonials");
         modelBuilder.Entity<Posts>().ToTable("Posts");
+
+        modelBuilder.Entity<CategoryType>(entity => {
+            entity.ToTable("CategoryType");
+            entity.HasIndex(ct => ct.TypeName).IsUnique(); 
+        });
+
+        modelBuilder.Entity<Category>(entity => {
+            entity.ToTable("Categories");
+            entity.HasKey(c => c.CategoriesId);
+    
+        entity.HasOne(c => c.ParentCategory)
+            .WithMany(c => c.SubCategories)
+            .HasForeignKey(c => c.ParentCategoryId)
+            .OnDelete(DeleteBehavior.Restrict); 
+
+        entity.HasOne(c => c.CategoryType)
+            .WithMany()
+            .HasForeignKey(c => c.CategoryTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+        });
     }
 }

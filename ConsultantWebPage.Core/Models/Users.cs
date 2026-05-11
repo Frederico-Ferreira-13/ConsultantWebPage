@@ -19,7 +19,7 @@ namespace ConsultantWebPage.Core.Models
 
         [Required]
         [MaxLength(255)]
-        public string Name { get; protected set; } = string.Empty;
+        public string FullName { get; protected set; } = string.Empty;
 
         [Required]
         [MaxLength(255)]
@@ -33,10 +33,11 @@ namespace ConsultantWebPage.Core.Models
         public string? ProfilePicture { get; protected set; }
         public string? FacebookUrl { get; protected set; }
         public string? InstagramUrl { get; protected set; }
-        public string? TwitterUrl { get; protected set; }
+        public string? XUrl { get; protected set; }
 
         public DateTime CreatedAt { get; protected set; }
         public DateTime? LastUpdatedAt { get; protected set; }
+        public DateTime? DeletedAt { get; protected set; }
 
         [ForeignKey("UsersRoleId")]
         public virtual UsersRole? Role { get; private set; }      
@@ -47,7 +48,7 @@ namespace ConsultantWebPage.Core.Models
 
         private Users(string name, string userName, ContactInfo contact, int usersRoleId, bool isApproved)
         {
-            Name = name;
+            FullName = name;
             UserName = userName;
             Contact = contact;
             UsersRoleId = usersRoleId;
@@ -72,7 +73,7 @@ namespace ConsultantWebPage.Core.Models
             Contact = newContact;
             SetLastUpdatedAt();
             return Result.Success();
-        }       
+        }   
 
         public void UpdateProfilePicture(string? fileName)
         {
@@ -88,11 +89,11 @@ namespace ConsultantWebPage.Core.Models
         {
             CheckIfActive();
             // Só atualiza e marca data se algo mudou efetivamente
-            if (FacebookUrl != fb || InstagramUrl != insta || TwitterUrl != twitter)
+            if (FacebookUrl != fb || InstagramUrl != insta || XUrl != twitter)
             {
                 FacebookUrl = fb;
                 InstagramUrl = insta;
-                TwitterUrl = twitter;
+                XUrl = twitter;
                 SetLastUpdatedAt();
             }
         }

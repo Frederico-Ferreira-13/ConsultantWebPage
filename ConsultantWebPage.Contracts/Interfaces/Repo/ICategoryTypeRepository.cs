@@ -6,5 +6,5 @@ namespace ConsultantWebPage.Contracts.Interfaces.Repo;
 
 public interface ICategoryTypeRepository : IGenericRepository<CategoryType>
 {
-    Task<Result<CategoryType>> GetByNameAsync(string TypeName);
+    Task<Result<CategoryType>> GetByNameAsync(string typeName);
 }

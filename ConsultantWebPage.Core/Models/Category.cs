@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ConsultantWebPage.Core.Common;
@@ -14,17 +15,22 @@ namespace ConsultantWebPage.Core.Models
         [MaxLength(100)]
         public string CategoryName { get; protected set; } = string.Empty;
 
+        [Required]
         public int CategoryTypeId { get; protected set; }
+
         public int? ParentCategoryId { get; protected set; }
         
         [ForeignKey("CategoryTypeId")]
         public virtual CategoryType? CategoryType { get; private set; }
+
         [ForeignKey("ParentCategoryId")]
         public virtual Category? ParentCategory { get; private set; }
 
+        public virtual ICollection<Category> SubCategories { get; private set; } = new List<Category>();
+
         private Category() { }
 
-        public Category(string categoryName, int categoryTypeId, int parentCategoryId)
+        public Category(string categoryName, int categoryTypeId, int? parentCategoryId = null)
         {
             ValidateCategory(categoryName, categoryTypeId, parentCategoryId);
 
@@ -33,7 +39,7 @@ namespace ConsultantWebPage.Core.Models
             ParentCategoryId = parentCategoryId;
         }
         
-        public void UpdateCategory(string categoryName, int categoryTypeId, int parentCategoryId)
+        public void UpdateCategory(string categoryName, int categoryTypeId, int? parentCategoryId = null)
         {
             ValidateCategory(categoryName, categoryTypeId, parentCategoryId);
 
@@ -42,7 +48,7 @@ namespace ConsultantWebPage.Core.Models
             ParentCategoryId = parentCategoryId;
         }
 
-        private void ValidateCategory(string categoryName, int categoryTypeId, int parentCategoryId)
+        private void ValidateCategory(string categoryName, int categoryTypeId, int? parentCategoryId)
         {
             if (string.IsNullOrWhiteSpace(categoryName))
                 throw new ArgumentException("Category name cannot be empty.");
@@ -50,8 +56,9 @@ namespace ConsultantWebPage.Core.Models
             if (categoryTypeId <= 0)
                 throw new ArgumentException("Category type ID must be a positive integer.");
 
-            if (parentCategoryId < 0)
-                throw new ArgumentException("Parent category ID cannot be negative.");
+            // Se houver pai, o ID tem de ser válido
+            if (parentCategoryId.HasValue && parentCategoryId.Value <= 0)
+                throw new ArgumentException("Parent category ID must be a positive integer if provided.");
         }
 
         public int GetId() => CategoriesId;

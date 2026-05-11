@@ -9,6 +9,5 @@ public interface ICategoryRepository : IGenericRepository<Category>
 {
     Task<Result<Category>> GetCategoryByNameAndAccount(string categoryName, int accountId);
     Task<Result<IEnumerable<Category>>> GetRootCategoriesByAccount(int accountId);
-    Task<Result<Category>> GetByIdWithSubCategories(int categoryId, int accountId);
-    Task<Result<Category>> GetByIdAndAccountAsync(int id, int accountId);
+    Task<Result<Category>> GetByIdWithSubCategories(int categoryId, int accountId);    
 }

@@ -12,6 +12,8 @@ namespace ConsultantWebPage.Core.Models
 
         public int ConsultantId { get; protected set; }
 
+        public int? UserId { get; protected set; }
+
         [Required]
         [MaxLength(255)]
         public string ClientName { get; protected set; } = string.Empty;
@@ -41,15 +43,19 @@ namespace ConsultantWebPage.Core.Models
 
         [ForeignKey("ConsultantId")]
         public virtual Users? Consultant { get; private set; }
+        
+        [ForeignKey("UserId")]
+        public virtual Users? Requester { get; private set; }
 
         private PropertyEvaluations() { }
 
         public PropertyEvaluations(int consultantId, string clientName, string clientContact, string propertyType,
-            string address, string typology, decimal area, string condition)
+            string address, string typology, decimal area, string condition, int? userId = null)
         {
-            ValidateEvaluation(consultantId, clientName, clientContact, propertyType, address, typology, area, condition);
+            ValidateEvaluation(consultantId, clientName, clientContact, area, userId);
 
             ConsultantId = consultantId;
+            UserId = userId;
             ClientName = clientName;
             ClientContact = clientContact;
             PropertyType = propertyType;
@@ -61,15 +67,15 @@ namespace ConsultantWebPage.Core.Models
             CreatedAt = DateTime.UtcNow;
         }
 
-        private void ValidateEvaluation(int consultantId, string clientName, string clientContact, string propertyType,
-            string address, string typology, decimal area, string condition)
+       private void ValidateEvaluation(int consultantId, string? clientName, string? clientContact, decimal area, int? userId)
         {
             if (consultantId <= 0)
                 throw new ArgumentException("Consultant ID must be a positive integer.");
-            if (string.IsNullOrWhiteSpace(clientName))
-                throw new ArgumentException("Client name cannot be empty.");
-            if (string.IsNullOrWhiteSpace(clientContact))
-                throw new ArgumentException("Client contact cannot be empty.");
+            
+            // Se não for um utilizador registado, o nome e contacto são obrigatórios
+            if (!userId.HasValue && string.IsNullOrWhiteSpace(clientName))
+                throw new ArgumentException("Client name is required for guest evaluations.");
+
             if (area <= 0)
                 throw new ArgumentException("Area must be a positive number.");
         }

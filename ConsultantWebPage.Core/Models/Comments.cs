@@ -16,12 +16,15 @@ namespace ConsultantWebPage.Core.Models
         public int UserId { get; protected set; }
 
 
-    [Required]
-        public string CommentText { get; protected set; } = string.Empty;       
+        [Required]
+        public string CommentText { get; protected set; } = string.Empty;      
+
         public DateTime CreatedAt { get; protected set; }
         public DateTime LastUpdatedAt { get; protected set; }
+
         public bool IsEdited { get; protected set; }
         public bool IsDeleted { get; protected set; }
+        public DateTime? DeletedAt { get; protected set; }
 
         public string OriginalComment { get; protected set; } = string.Empty;
         public int? ParentCommentId { get; protected set; }
@@ -57,15 +60,15 @@ namespace ConsultantWebPage.Core.Models
             if (string.IsNullOrWhiteSpace(newCommentText))
                 throw new ArgumentException("Comentário não pode ser vazio.", nameof(newCommentText));
 
-            if(newCommentText.Length > 1000)
+            if (newCommentText.Length > 1000)
                 throw new ArgumentException("Comentário não pode exceder 1000 caracteres.", nameof(newCommentText));
 
-            
-            if((DateTime.UtcNow - CreatedAt).TotalDays > 30)
+            if ((DateTime.UtcNow - CreatedAt).TotalDays > 30)
                 throw new InvalidOperationException("Não é possível editar um comentário com mais de 30 dias.");
 
-            if(CommentText != newCommentText)
+            if (CommentText != newCommentText)
             {
+                // Guarda o original apenas na primeira edição
                 OriginalComment = string.IsNullOrEmpty(OriginalComment) ? CommentText : OriginalComment;                
                 CommentText = newCommentText;
                 LastUpdatedAt = DateTime.UtcNow;
@@ -75,9 +78,10 @@ namespace ConsultantWebPage.Core.Models
 
         public void Delete()
         {
-            if(!IsDeleted)
+            if (!IsDeleted)
             {
                 IsDeleted = true;
+                DeletedAt = DateTime.UtcNow; // Agora preenche a coluna do SQL
                 CommentText = "[Comentário Eliminado pelo utilizador]";
                 LastUpdatedAt = DateTime.UtcNow;
             }
