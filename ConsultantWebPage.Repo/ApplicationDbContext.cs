@@ -17,6 +17,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<RealEstateCategories> RealEstateCategories { get; set; }
     public DbSet<Category> Categories { get; set; }
     public DbSet<CategoryType> CategoryTypes { get; set; }
+    public DbSet<Cities> Cities { get; set; }
     
     // Interação e Marketing
     public DbSet<AboutMe> AboutMe { get; set; }
@@ -90,7 +91,7 @@ public class ApplicationDbContext : DbContext
             contact.HasIndex(c => c.Email).IsUnique(); 
         });
 
-        entity.Property(u => u.Name).IsRequired().HasMaxLength(255);
+        entity.Property(u => u.FullName).IsRequired().HasMaxLength(255);
         entity.Property(u => u.UserName).IsRequired().HasMaxLength(255);
         
         // Relacionamento com a Role

@@ -43,7 +43,7 @@ namespace ConsultantWebPage.Core.Models
         public virtual Users? Consultant { get; private set; }
         
         [ForeignKey("CityId")]
-        public virtual City? City { get; private set; }
+        public virtual Cities? City { get; private set; }
 
         private RealEstate() { }
 
