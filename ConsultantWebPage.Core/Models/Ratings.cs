@@ -16,7 +16,7 @@ namespace ConsultantWebPage.Core.Models
         public virtual RealEstate? RealEstate { get; private set; }
         public virtual Users? User { get; private set; }
 
-        public StarRating? RatingValue { get; protected set; }
+        public StarRating? RatingValue { get; protected set; } = null!;
 
         private const int MinRating = 1;
         private const int MaxRating = 5;
@@ -62,11 +62,11 @@ namespace ConsultantWebPage.Core.Models
             }
         }
 
-        private static void ValidateRating(int recipesId, int userId)
+        private static void ValidateRating(int realEstateId, int userId)
         {
-            if (recipesId <= 0)
+            if (realEstateId <= 0)
             {
-                throw new ArgumentException("O ID da Receita deve ser positivo.", nameof(recipesId));
+                throw new ArgumentException("O ID da Propriedade deve ser positivo.", nameof(realEstateId));
             }
             if (userId <= 0)
             {

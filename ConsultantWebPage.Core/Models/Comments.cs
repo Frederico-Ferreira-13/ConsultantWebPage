@@ -24,6 +24,7 @@ namespace ConsultantWebPage.Core.Models
 
         public bool IsEdited { get; protected set; }
         public bool IsDeleted { get; protected set; }
+        public bool IsApproved { get; protected set; }
         public DateTime? DeletedAt { get; protected set; }
 
         public string OriginalComment { get; protected set; } = string.Empty;
@@ -49,6 +50,7 @@ namespace ConsultantWebPage.Core.Models
             LastUpdatedAt = DateTime.UtcNow;
             IsEdited = false;
             IsDeleted = false;
+            IsApproved = false;
             ParentCommentId = parentCommentId;
         }
 

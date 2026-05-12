@@ -10,7 +10,13 @@ namespace ConsultantWebPage.Core.Models
         [Key]
         public int PostId { get; protected set; }
 
+        public int CategoryId { get; protected set; }
+        public int ViewCount { get; protected set; }
+
         public int AuthorId { get; protected set; }
+
+        [MaxLength(50)]
+        public string Status { get; protected set; } = "Draft";
 
         [Required]
         [MaxLength(255)]
@@ -38,17 +44,20 @@ namespace ConsultantWebPage.Core.Models
 
         private Posts() { }
 
-        public Posts(int authorId, string title, string slug, string content, string summary, string imageUrl, bool isPublished)
+        public Posts(int authorId, int categoryId, string title, string slug, string content, string summary, string imageUrl, string status)
         {
             ValidatePost(authorId, title, slug, content);
 
             AuthorId = authorId;
+            CategoryId = categoryId;
             Title = title;
             Slug = slug.ToLower().Trim().Replace(" ", "-"); // Slugs costumam ser minúsculos e sem espaços
             Content = content;
             Summary = summary;
             ImageUrl = imageUrl;
-            IsPublished = isPublished;
+            Status = status;
+            IsPublished = status.ToLower() == "published";
+            ViewCount = 0;
             CreatedAt = DateTime.UtcNow;
             LastUpdatedAt = DateTime.UtcNow;
         }
@@ -91,6 +100,8 @@ namespace ConsultantWebPage.Core.Models
             }
             PostId = id;
         }
+
+        public void IncrementView() => ViewCount++;
 
         public bool GetIsActive() => IsPublished; // Assuming posts are always active for this example
     }

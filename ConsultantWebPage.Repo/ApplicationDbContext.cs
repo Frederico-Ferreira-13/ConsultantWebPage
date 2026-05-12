@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ConsultantWebPage.Core.Models;
+using ConsultantWebPage.Core.Models.ValueObjects;
 
 namespace ConsultantWebPage.Repo;
 
@@ -106,8 +107,31 @@ public class ApplicationDbContext : DbContext
             .HasKey(f => new { f.UserId, f.RealEstateId });
 
         // 6. Configuração de Ratings (Chave Composta)
-        modelBuilder.Entity<Ratings>()
-            .HasKey(r => new { r.UserId, r.RealEstateId });
+        modelBuilder.Entity<Ratings>(entity =>
+        {
+            entity.ToTable("Ratings"); // Garante o nome correto da tabela
+            entity.HasKey(r => r.RatingsId);
+            entity.HasIndex(r => new { r.UserId, r.RealEstateId }).IsUnique();
+
+            entity.Property(r => r.RatingValue)
+                .HasConversion(
+                    v => v!.Value,           // para a base de dados: StarRating → int
+                    v => StarRating.Create(v) // da base de dados: int → StarRating
+                )
+                .HasColumnName("RatingValue")
+                .IsRequired();
+           
+
+            entity.HasOne(r => r.RealEstate)
+                .WithMany()
+                .HasForeignKey(r => r.RealEstateId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
             
         // 7. Testemunhos e Posts
         modelBuilder.Entity<Testimonials>().ToTable("Testimonials");

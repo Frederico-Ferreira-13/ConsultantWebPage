@@ -8,6 +8,8 @@ namespace ConsultantWebPage.Core.Models.ValueObjects
         private const int MinRating = 1;
         private const int MaxRating = 5;
 
+        private StarRating() { }
+
         private StarRating(int value)
         {
             if (value < MinRating || value > MaxRating)

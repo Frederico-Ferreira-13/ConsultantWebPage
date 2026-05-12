@@ -9,7 +9,5 @@ public interface ICommentsRepository : IGenericRepository<Comments>
 {
     Task<Result<IEnumerable<Comments>>> GetCommentsByRealEstateIdAsync(int realEstateId);
 
-    Task<Result<IEnumerable<Comments>>> GetCommentsByPostIdAsync(int postId);
-
     Task<Result<IEnumerable<Comments>>> GetPendingCommentsAsync();
 }
