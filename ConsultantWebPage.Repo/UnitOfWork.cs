@@ -36,6 +36,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IUsersRepository Users { get; }
     public IUserSettingRepository UserSettings { get; }
     public IUsersRoleRepository UsersRole { get; }
+    public ICitiesRepository Cities { get; }
 
     public UnitOfWork(
         ApplicationDbContext context,
