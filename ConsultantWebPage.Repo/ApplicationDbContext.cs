@@ -1,6 +1,7 @@
-using Microsoft.EntityFrameworkCore;
+// EF Core types should be available via project package references.
 using ConsultantWebPage.Core.Models;
 using ConsultantWebPage.Core.Models.ValueObjects;
+using Microsoft.EntityFrameworkCore;
 
 namespace ConsultantWebPage.Repo;
 

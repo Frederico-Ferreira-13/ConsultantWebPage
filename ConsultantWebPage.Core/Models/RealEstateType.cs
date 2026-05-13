@@ -13,6 +13,8 @@ namespace ConsultantWebPage.Core.Models
         [MaxLength(100)]
         public string TypeName { get; protected set; } = string.Empty;
 
+        public virtual ICollection<RealEstate> RealEstates { get; private set; } = new List<RealEstate>();
+
         private RealEstateType() { }
 
         public RealEstateType(string typeName)

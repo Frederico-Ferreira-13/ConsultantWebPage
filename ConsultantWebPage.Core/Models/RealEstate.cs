@@ -45,6 +45,8 @@ namespace ConsultantWebPage.Core.Models
         [ForeignKey("CityId")]
         public virtual Cities? City { get; private set; }
 
+        public virtual ICollection<RealEstateCategories> RealEstateCategories { get; private set; } = new List<RealEstateCategories>();
+
         private RealEstate() { }
 
         private RealEstate(int realEstateTypeId, int consultantId, int cityId, string title, string? description, 
