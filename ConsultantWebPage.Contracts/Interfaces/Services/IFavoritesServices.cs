@@ -5,6 +5,9 @@ namespace ConsultantWebPage.Contracts.Interfaces.Services;
 
 public interface IFavoritesServices
 {
-    Task<Result> ToggleFavoriteAsync(int userId, int realEstateId);
+    Task<Result<int>> GetCurrentUserIdAsync();
+    Task<Result> AddFavoriteAsync(Favorites favorite);
     Task<Result<IEnumerable<Favorites>>> GetUserFavoritesAsync(int userId);
+    Task<Result> RemoveFavoriteAsync(int favoriteId);
+    Task<Result<bool>> ToggleFavoriteAsync(int realEstateId);
 }
