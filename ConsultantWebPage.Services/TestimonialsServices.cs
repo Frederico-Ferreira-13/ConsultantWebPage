@@ -11,15 +11,38 @@ public class TestimonialsServices : ITestimonialsServices
 
     public TestimonialsServices(IUnitOfWork unitOfWork)
     {
-        _unitOfWork = unitOfWork;
+        _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
     }
 
-    public async Task<Result<IEnumerable<Testimonials>>> GetApprovedTestimonialsAsync()
+    public async Task<Result> SubmitTestimonialAsync(Testimonials testimonial)
     {
-        // Exemplo de lógica: filtrar apenas os que estão aprovados
-        var all = await _unitOfWork.Testimonials.GetAllAsync();
-        if (!all.IsSuccess) return all;
+        testomonial.UpdateVisibility(false);
 
-        return Result<IEnumerable<Testimonials>>.Success(all.Value.Where(t => t.IsApproved));
+        _context.Testimonials.Add(testimonial);
+        await _context.SaveChangesAsync();
+
+        return Result.Success();    
+
+
+    }
+
+    public async Task<Result<IEnumerable<Testimonials>>> GetApprovedTestimonialsAsync(int consultantId)
+    {
+        // Implementation here
+    }
+
+    public async Task<Result<IEnumerable<Testimonials>>> GetAllTestimonialsForModerationAsync(int consultantId)
+    {
+        // Implementation here
+    }
+
+    public async Task<Result> DeleteTestimonialAsync(int testimonialId)
+    {
+        // Implementation here
+    }
+
+    public async Task<Result> UpdateVisibilityAsync(int testimonialId, bool isVisible)
+    {
+        // Implementation here
     }
 }

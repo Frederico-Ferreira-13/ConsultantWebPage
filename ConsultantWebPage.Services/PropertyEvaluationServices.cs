@@ -27,4 +27,24 @@ public class PropertyEvaluationServices : IPropertyEvaluationServices
         
         return Result.Success();
     }
+
+    public async Task<Result<IEnumerable<PropertyEvaluations>>> GetPendingEvaluationsAsync(int consultantId)
+    {
+        return await _unitOfWork.PropertiesEvaluations.GetPendingEvaluationsAsync(consultantId);
+    }
+
+    public async Task<Result<PropertyEvaluations>> GetEvaluationDetailsAsync(int evaluationId)
+    {
+        return await _unitOfWork.PropertiesEvaluations.GetDetailsAsync(evaluationId);
+    }
+
+    public async Task<Result> UpdateStatusAsync(int evaluationId, string newStatus)
+    {
+        return await _unitOfWork.PropertiesEvaluations.UpdateStatusAsync(evaluationId, newStatus);
+    }
+
+    public async Task<Result> DeleteEvaluationAsync(int evaluationId)
+    {
+        return await _unitOfWork.PropertiesEvaluations.DeleteAsync(evaluationId);
+    }
 }

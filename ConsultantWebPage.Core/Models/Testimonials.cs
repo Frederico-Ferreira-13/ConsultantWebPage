@@ -28,9 +28,9 @@ namespace ConsultantWebPage.Core.Models
 
         private Testimonials() { }
 
-        public Testimonials(int consultantId, string? clientName, string? testimonialText, int rating, bool isVisible)
+        public Testimonials(int consultantId, string clientName, string testimonialText, int rating, bool isVisible = false)
         {
-            ValidateTestimonial(consultantId, rating);
+            Validate(consultantId, rating, clientName, testimonialText);
 
             ConsultantId = consultantId;
             ClientName = clientName;
@@ -45,14 +45,19 @@ namespace ConsultantWebPage.Core.Models
             IsVisible = isVisible;
         }
 
-        private void ValidateTestimonial(int consultantId, int rating)
+        private void Validate(int consultantId, int rating, string name, string text)
         {
             if (consultantId <= 0)
-                throw new ArgumentException("Consultant ID must be a positive integer.");
+                throw new ArgumentException("ID de consultor inválido.");
 
-            
             if (rating < 1 || rating > 5)
-                throw new ArgumentException("Rating must be between 1 and 5.");
+                throw new ArgumentException("A avaliação deve ser entre 1 e 5.");
+
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("O nome do cliente é obrigatório.");
+
+            if (string.IsNullOrWhiteSpace(text) || text.Length < 10)
+                throw new ArgumentException("O testemunho deve ter pelo menos 10 caracteres.");
         }
 
         public int GetId() => TestimonialId;
@@ -66,7 +71,7 @@ namespace ConsultantWebPage.Core.Models
                 throw new ArgumentException("ID must be a positive integer.");
 
             TestimonialId = id;
-        }
+        }        
 
         public bool GetIsActive() => IsVisible;
     }

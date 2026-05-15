@@ -98,6 +98,19 @@ namespace ConsultantWebPage.Core.Models
             }
         }
 
+        public void UpdateUserName(string newUserName)
+        {
+            CheckIfActive();
+            if (string.IsNullOrWhiteSpace(newUserName))
+                throw new ArgumentException("O nome de utilizador não pode ser vazio.", nameof(newUserName));
+
+            if (UserName != newUserName)
+            {
+                UserName = newUserName;
+                SetLastUpdatedAt();
+            }
+        }
+
         public void SetPassword(string newPasswordHash, string newSalt)
         {
             CheckIfActive();

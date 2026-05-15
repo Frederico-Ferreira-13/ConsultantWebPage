@@ -30,4 +30,29 @@ public class RatingsServices : IRatingsServices
     {
         return await _unitOfWork.Rating.GetAverageRatingAsync(realEstateId);
     }
+
+    public async Task<Result<Ratings>> GetUserRatingForPropertyAsync(int realEstateId, int userId)
+    {
+        return await _unitOfWork.Rating.GetUserRatingAsync(realEstateId, userId);
+    }
+
+    public async Task<Result<IEnumerable<Ratings>>> GetRatingsByPropertyIdAsync(int realEstateId)
+    {
+        return await _unitOfWork.Rating.GetRatingsByPropertyIdAsync(realEstateId);
+    }
+
+    public async Task<Result<Ratings>> GetRatingByIdAsync(int ratingId)
+    {
+        return await _unitOfWork.Rating.GetRatingByIdAsync(ratingId);
+    }
+
+    public async Task<Result> DeleteRatingAsync(int ratingId)
+    {
+        return await _unitOfWork.Rating.DeleteAsync(ratingId);
+    }
+
+    public async Task<Result<double>> GetAverageRatingForConsultantAsync(int consultantId)
+    {
+        return await _unitOfWork.Rating.GetAverageRatingForConsultantAsync(consultantId);
+    }
 }

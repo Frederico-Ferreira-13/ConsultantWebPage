@@ -14,6 +14,12 @@ public class LeadsServices : ILeadsServices
         _unitOfWork = unitOfWork;
     }
 
+    
+    public async Task<Result<Leads>> GetLeadByIdAsync(int leadId)
+    {
+        return await _unitOfWork.Leads.GetByIdAsync(leadId);
+    }
+
     public async Task<Result<IEnumerable<Leads>>> GetLeadsByConsultantAsync(int consultantId)
     {
         return await _unitOfWork.Leads.GetByConsultantIdAsync(consultantId);
@@ -31,5 +37,15 @@ public class LeadsServices : ILeadsServices
         await _unitOfWork.CommitAsync();
         
         return Result.Success();
+    }    
+
+    public async Task<Result> UpdateLeadStatusAsync(int leadId, string newStatus)
+    {
+        return await _unitOfWork.Leads.UpdateStatusAsync(leadId, newStatus);
+    }
+
+    public async Task<Result> AssignLeadAsync(int leadId, int consultantId)
+    {
+        return await _unitOfWork.Leads.AssignAsync(leadId, consultantId);
     }
 }
