@@ -13,7 +13,7 @@ public interface IPostsServices
     Task<Result> IncrementPostViewAsync(int postId);
 
     Task<Result<Posts>> CreatePostAsync(Posts newPost);
-    Task<Result<Posts>> UpdatePostAsync(Posts updatePost);
+    Task<Result<Posts>> UpdatePostAsync(int postId ,Posts updatePost);
     Task<Result> DeletePostAsync(int postId);
     Task<Result<IEnumerable<Posts>>> GetAllPostsAsync();
 }

@@ -19,4 +19,28 @@ public interface IRealEstateServices
     Task<Result<IEnumerable<Comments>>> GetCommentsAsync(int propertyId);
 
     Task<Result<IEnumerable<RealEstate>>> SearchPropertiesAsync(string city, decimal? maxPrice, int? rooms);
+
+    Task<Result> AssignCategoryToPropertyAsync(int realEstateId, int categoryId);
+    Task<Result> RemoveCategoryFromPropertyAsync(int realEstateId, int categoryId);
+
+    Task<Result> SyncPropertyCategoriesAsync(int realEstateId, IEnumerable<int> categoryIds);
+    Task<Result<IEnumerable<Category>>> GetCategoriesByPropertyIdAsync(int realEstateId);
+
+    Task<Result<IEnumerable<RealEstate>>> GetPropertiesByCategoryIdAsync(int categoryId);
+    Task<bool> IsPropertyInCategoryAsync(int realEstateId, int categoryId);
+
+    Task<Result<RealEstateMedia>> AddMediaAsync(RealEstateMedia media);
+    Task<Result<IEnumerable<RealEstateMedia>>> AddMultipleMediaAsync(IEnumerable<RealEstateMedia> mediaList);
+    Task<Result<IEnumerable<RealEstateMedia>>> GetMediaByPropertyIdAsync(int realEstateId);
+    Task<Result<RealEstateMedia>> GetMainImageAsync(int realEstateId);
+    Task<Result> SetMainImageAsync(int mediaId, int realEstateId);
+    Task<Result> DeleteMediaAsync(int mediaId);
+    Task<Result> UpdateMediaOrderAsync(List<int> mediaIdsInOrder);
+
+    Task<Result<IEnumerable<RealEstateType>>> GetAllRealEstateTypesAsync();
+    Task<Result<RealEstateType>> GetRealEstateTypeByIdAsync(int id);
+    Task<Result<RealEstateType>> CreateRealEstateTypeAsync(RealEstateType realEstateType);
+    Task<Result<RealEstateType>> UpdateRealEstateTypeAsync(RealEstateType updateRealEstateType);
+    Task<Result> DeleteRealEstateTypeAsync(int id);
+    Task<bool> TypeNameExistsAsync(string typeName);
 }

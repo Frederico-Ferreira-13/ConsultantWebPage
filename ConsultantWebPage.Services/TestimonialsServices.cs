@@ -5,7 +5,7 @@ using ConsultantWebPage.Contracts.Interfaces.Repo;
 
 namespace ConsultantWebPage.Services;
 
-public class TestimonialsServices : ITestimonialsServices
+public class TestimonialsServices
 {
     private readonly IUnitOfWork _unitOfWork;
 
@@ -15,13 +15,7 @@ public class TestimonialsServices : ITestimonialsServices
     }
 
     public async Task<Result> SubmitTestimonialAsync(Testimonials testimonial)
-    {
-        testomonial.UpdateVisibility(false);
-
-        _context.Testimonials.Add(testimonial);
-        await _context.SaveChangesAsync();
-
-        return Result.Success();    
+    {          
 
 
     }

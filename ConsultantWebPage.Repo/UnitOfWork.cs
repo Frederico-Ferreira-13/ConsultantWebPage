@@ -22,6 +22,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IAboutMeRepository AboutMe { get; }
     public ICategoryRepository Categories { get; }
     public ICategoryTypeRepository CategoryTypes { get; }
+    public ICitiesRepository Citie { get; }
     public ICommentsRepository Comments { get; }
     public IFavoritesRepository Favorites { get; }
     public ILeadsRepository Leads { get; }
@@ -44,6 +45,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         IAboutMeRepository aboutMe,
         ICategoryRepository categories,
         ICategoryTypeRepository categoryTypes,
+        ICitiesRepository cities,
         ICommentsRepository comments,
         IFavoritesRepository favorites,
         ILeadsRepository leads,
@@ -65,6 +67,7 @@ public class UnitOfWork : IUnitOfWork, IDisposable
         AboutMe = aboutMe;
         Categories = categories;
         CategoryTypes = categoryTypes;
+        Cities = cities;
         Comments = comments;
         Favorites = favorites;
         Leads = leads;

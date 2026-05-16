@@ -7,6 +7,7 @@ public interface IUnitOfWork : IDisposable
     public IAboutMeRepository AboutMe { get; }
     public ICategoryRepository Categories { get; }
     public ICategoryTypeRepository CategoryTypes { get; }
+    public ICitiesRepository Cities { get; }
     public ICommentsRepository Comments { get; }
     public IFavoritesRepository Favorites { get; }
     public ILeadsRepository Leads { get; }

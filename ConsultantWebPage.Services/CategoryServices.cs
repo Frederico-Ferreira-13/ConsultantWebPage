@@ -16,61 +16,231 @@ public class CategoryServices : ICategoryServices
 
     public async Task<Result<Category>> GetCategoryByIdAsync(int categoryId)
     {
-        return await _unitOfWork.Categories.GetByIdAsync(categoryId);
+        if (categoryId <= 0)
+        {
+            return Error.Validation("O ID da categoria deve ser um inteiro positivo.");
+        }
+
+        var repositoryResult = await _unitOfWork.Categories.GetByIdAsync(categoryId);
+        if (repositoryResult.IsFailure || repositoryResult.Value == null) 
+        {
+            return Error.NotFound("CATEGORY_NOT_FOUND", $"Categoria com ID {categoryId} não encontrada.");
+        }
+
+        return Result<Category>.Success(repositoryResult.Value);
     }
 
     public async Task<Result<IEnumerable<Category>>> GetRootCategoriesAsync()
     {
-        return await _unitOfWork.Categories.GetRootCategoriesAsync();
+        var rootCategoriesResult = await _unitOfWork.Categories.GetAllAsync();
+        if (rootCategoriesResult.IsFailure || rootCategoriesResult.Value == null)
+        {
+            return Error.NotFound("ROOT_CATEGORIES_NOT_FOUND", "Não foram encontradas categorias principais.");
+        }
+
+        var rootCategories = rootCategoriesResult.Value.Where(c => c.ParentCategoryId == null);
+
+        return Result<IEnumerable<Category>>.Success(rootCategories);
     }
 
     public async Task<Result<Category>> GetCategoryWithSubsAsync(int categoryId)
     {
-        return await _unitOfWork.Categories.GetByIdWithSubCategories(categoryId);
+        if (categoryId <= 0)
+        {
+            return Error.Validation("O ID da categoria deve ser um inteiro positivo.");
+        }
+
+        var repositoryResult = await _unitOfWork.Categories.GetByIdAsync(categoryId);
+        if (repositoryResult.IsFailure || repositoryResult.Value == null)
+        {
+            return Error.NotFound("CATEGORY_NOT_FOUND", $"Categoria com ID {categoryId} não encontrada.");
+        }
+
+        return Result<Category>.Success(repositoryResult.Value);
     }
 
     public async Task<Result<Category>> CreateCategoryAsync(Category newCategory)
     {
-        return await _unitOfWork.Categories.CreateAsync(newCategory);
+        if (string.IsNullOrWhiteSpace(newCategory.CategoryName))
+        {
+            return Error.Validation("O nome da categoria é obrigatório.");
+        }
+
+        if (newCategory.CategoryName.Length > 255)
+        {
+            return Error.Validation("O nome da categoria não pode exceder 255 caracteres.");
+        }
+
+        if (newCategory.CategoryTypeId <= 0)
+        {
+            return Error.Validation("Tipo de categoria inválido.");
+        }
+
+        var categoryTypeResult = await _unitOfWork.CategoryTypes.GetByIdAsync(newCategory.CategoryTypeId);
+        if (categoryTypeResult.IsFailure || categoryTypeResult.Value == null)
+        {
+            return Error.NotFound("CATEGORY_TYPE_NOT_FOUND", $"Tipo de categoria com ID {newCategory.CategoryTypeId} não encontrado.");
+        }
+
+        if (newCategory.ParentCategoryId.HasValue)
+        {
+            if (newCategory.ParentCategoryId.Value == 0)
+            {
+                return Error.Validation("Categoria pai inválida.");
+            }
+
+            var parentResult = await _unitOfWork.Categories.GetByIdAsync(newCategory.ParentCategoryId.Value);
+            if (parentResult.IsFailure || parentResult.Value == null)
+            {
+                return Error.Validation($"Categoria pai com ID {newCategory.ParentCategoryId.Value} não existe.");
+            }
+        }
+
+        await _unitOfWork.BeginTransactionAsync();
+
+        try
+        {
+            var repoResult = await _unitOfWork.Categories.AddAsync(newCategory);
+            if (repoResult.IsFailure)
+            {
+                return Error.InternalServer("Não foi possível registar a categoria no repositório.");
+            }
+
+            await _unitOfWork.CommitAsync();
+
+            return Result<Category>.Success(newCategory, "Categoria criada com sucesso.");
+        }
+        catch (Exception ex)
+        {
+            _unitOfWork.Rollback();
+            return Error.InternalServer($"Erro inesperado ao criar categoria: {ex.Message}");
+        }
     }
 
     public async Task<Result<Category>> UpdateCategoryAsync(Category updateCategory)
     {
-        return await _unitOfWork.Categories.UpdateAsync(updateCategory);
+        var existingCategoryResult = await _unitOfWork.Categories.GetByIdAsync(updateCategory.CategoriesId);
+        if (existingCategoryResult.IsFailure || existingCategoryResult.Value == null)
+        {
+            return Error.NotFound("CATEGORY_NOT_FOUND", "A categoria que tenta atualizar não existe.");
+        }
+
+        var existingCategory = existingCategoryResult.Value;
+
+        existingCategory.UpdateCategory(
+            updateCategory.CategoryName,
+            updateCategory.CategoryTypeId,
+            updateCategory.ParentCategoryId
+        );
+        
+        var repoResult = await _unitOfWork.Categories.UpdateAsync(updateCategory);
+        if (repoResult.IsFailure)
+        {
+            return Error.InternalServer("Erro ao atualizar a categoria no repositório.");
+        }
+
+        await _unitOfWork.CommitAsync();
+        return Result<Category>.Success(updateCategory, "Categoria atualizada com sucesso.");
     }
 
-    public async Task<Result>> DeleteCategoryAsync(int categoryId)
+    public async Task<Result> DeleteCategoryAsync(int categoryId)
     {
-        return await _unitOfWork.Categories.DeleteAsync(categoryId);
+        if (categoryId <= 0)
+        {
+            return Error.Validation("O ID da categoria é inválido.");
+        }
+
+        var existingCategoryResult = await _unitOfWork.Categories.GetByIdAsync(categoryId);
+        if (existingCategoryResult.IsFailure || existingCategoryResult.Value == null)
+        {
+            return Error.NotFound("CATEGORY_NOT_FOUND", "A categoria que tenta eliminar não existe.");
+        }
+
+        var repoResult = await _unitOfWork.Categories.DeleteAsync(categoryId);
+        if (repoResult.IsFailure)
+        {
+            return Error.InternalServer("Não foi possível eliminar a categoria.");
+        }
+
+        await _unitOfWork.CommitAsync();
+        return Result.Success("Categoria eliminada com sucesso.");
     }
 
     public async Task<Result<IEnumerable<CategoryType>>> GetAllCategoryTypesAsync()
     {
-        return await _unitOfWork.CategoryTypes.GetAllAsync();
+        var result = await _unitOfWork.CategoryTypes.GetAllAsync();
+        if (result.IsFailure || result.Value == null)
+        {
+            return Error.NotFound("CATEGORY_TYPES_NOT_FOUND", "Nenhum tipo de categoria encontrado.");
+        }
+        return Result<IEnumerable<CategoryType>>.Success(result.Value);
     }
 
     public async Task<Result<CategoryType>> GetCategoryTypeByIdAsync(int id)
     {
-        return await _unitOfWork.CategoryTypes.GetByIdAsync(id);
+        var result = await _unitOfWork.CategoryTypes.GetByIdAsync(id);
+        if (result.IsFailure || result.Value == null)
+        {
+            return Error.NotFound("CATEGORY_TYPE_NOT_FOUND", "Tipo de categoria não encontrado.");
+        }
+        return Result<CategoryType>.Success(result.Value);
     }
 
     public async Task<Result<CategoryType>> GetCategoryTypeByNameAsync(string name)
     {
-        return await _unitOfWork.CategoryTypes.ByNameAsync(name);
+        var result = await _unitOfWork.CategoryTypes.GetByNameAsync(name);
+        if (result.IsFailure || result.Value == null)
+        {
+            return Error.NotFound("CATEGORY_TYPE_NOT_FOUND", "Tipo de categoria não encontrado.");
+        }
+        return Result<CategoryType>.Success(result.Value);
     }
 
     public async Task<Result<CategoryType>> CreateCategoryTypeAsync(CategoryType categoryType)
     {
-        return await _unitOfWork.CategoryTypes.CreateAsync(categoryType);
+        var repoResult = await _unitOfWork.CategoryTypes.AddAsync(categoryType); // Ajustado de CreateAsync para AddAsync do repositório genérico
+        if (repoResult.IsFailure)
+        {
+            return Error.InternalServer("Não foi possível criar o tipo de categoria.");
+        }
+
+        await _unitOfWork.CommitAsync();
+        return Result<CategoryType>.Success(categoryType, "Tipo de categoria criado com sucesso.");
     }
 
     public async Task<Result<CategoryType>> UpdateCategoryTypeAsync(CategoryType updateCategoryType)
     {
-        return await _unitOfWork.CategoryTypes.UpdateAsync(updateCategoryType);
+        var existingType = await _unitOfWork.CategoryTypes.GetByIdAsync(updateCategoryType.CategoryTypeId);
+        if (existingType.IsFailure || existingType.Value == null)
+        {
+            return Error.NotFound("CATEGORY_TYPE_NOT_FOUND", "O tipo de categoria não existe.");
+        }
+
+        var repoResult = await _unitOfWork.CategoryTypes.UpdateAsync(updateCategoryType);
+        if (repoResult.IsFailure)
+        {
+            return Error.InternalServer("Erro ao atualizar o tipo de categoria.");
+        }
+
+        await _unitOfWork.CommitAsync();
+        return Result<CategoryType>.Success(updateCategoryType, "Tipo de categoria atualizado com sucesso.");
     }
 
-    public async Task<Result>> DeleteCategoryTypeAsync(int id)
+    public async Task<Result> DeleteCategoryTypeAsync(int id)
     {
-        return await _unitOfWork.CategoryTypes.DeleteAsync(id);
-    }   
+        var existingType = await _unitOfWork.CategoryTypes.GetByIdAsync(id);
+        if (existingType.IsFailure || existingType.Value == null)
+        {
+            return Error.NotFound("CATEGORY_TYPE_NOT_FOUND", "O tipo de categoria não existe.");
+        }
+
+        var repoResult = await _unitOfWork.CategoryTypes.DeleteAsync(id);
+        if (repoResult.IsFailure)
+        {
+            return Error.InternalServer("Não foi possível eliminar o tipo de categoria.");
+        }
+
+        await _unitOfWork.CommitAsync();
+        return Result.Success("Tipo de categoria eliminado com sucesso.");
+    }
 }

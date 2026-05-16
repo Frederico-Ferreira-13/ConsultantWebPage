@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using ConsultantWebPage.Core.Common;
 using ConsultantWebPage.Core.Models;
 using ConsultantWebPage.Contracts.Interfaces.Repo;
@@ -17,12 +20,27 @@ public class LeadsServices : ILeadsServices
     
     public async Task<Result<Leads>> GetLeadByIdAsync(int leadId)
     {
-        return await _unitOfWork.Leads.GetByIdAsync(leadId);
+        var leadResult = await _unitOfWork.Leads.GetByIdAsync(leadId);
+        if (leadResult.IsFailure || leadResult.Value == null)
+        {
+            return Result<Leads>.Failure(leadResult.Error);
+        }
+
+        return Result<Leads>.Success(leadResult.Value);
+        
     }
 
     public async Task<Result<IEnumerable<Leads>>> GetLeadsByConsultantAsync(int consultantId)
     {
-        return await _unitOfWork.Leads.GetByConsultantIdAsync(consultantId);
+        var consultantResult = await _unitOfWork.Leads.GetByConsultantIdAsync(consultantId);
+        if (consultantResult.IsFailure || consultantResult.Value == null) 
+        {
+            return Result<IEnumerable<Leads>>.Failure(
+                Error.NotFound(ErrorCodes.NotFound, $"Consultor com ID {consultantId} não encontrado."));
+        }
+
+        return Result<IEnumerable<Leads>>.Success(consultantResult.Value);
+        
     }
 
     public async Task<Result> CreateLeadAsync(Leads lead)
@@ -41,11 +59,59 @@ public class LeadsServices : ILeadsServices
 
     public async Task<Result> UpdateLeadStatusAsync(int leadId, string newStatus)
     {
-        return await _unitOfWork.Leads.UpdateStatusAsync(leadId, newStatus);
+        var leadResult = await _unitOfWork.Leads.GetByIdAsync(leadId);
+        if (leadResult.IsFailure || leadResult.Value == null)
+        {
+            return Error.NotFound("LEAD_NOT_FOUND", $"A lead com o ID {leadId} não existe.");
+        }
+
+        var lead = leadResult.Value;
+
+        try
+        {
+            lead.UpdateStatus(newStatus);
+
+            var repoResult = await _unitOfWork.Leads.UpdateAsync(lead);
+            if (repoResult.IsFailure)
+            {
+                return Error.InternalServer("Erro ao atualizar o estado da lead no repositório.");
+            }
+
+            await _unitOfWork.CommitAsync();
+            return Result.Success();
+        }
+        catch (ArgumentException ex)
+        {
+            return Error.Validation(ex.Message);
+        }
     }
 
     public async Task<Result> AssignLeadAsync(int leadId, int consultantId)
     {
-        return await _unitOfWork.Leads.AssignAsync(leadId, consultantId);
+        var leadResult = await _unitOfWork.Leads.GetByIdAsync(leadId);
+        if (leadResult.IsFailure || leadResult.Value == null)
+        {
+            return Error.NotFound("LEAD_NOT_FOUND", $"A lead com o ID {leadId} não existe.");
+        }
+
+        var lead = leadResult.Value;
+
+        try
+        {            
+            lead.AssignToConsultant(consultantId);
+            
+            var repoResult = await _unitOfWork.Leads.UpdateAsync(lead);
+            if (repoResult.IsFailure)
+            {
+                return Error.InternalServer("Erro ao atribuir o consultor à lead no repositório.");
+            }
+
+            await _unitOfWork.CommitAsync();
+            return Result.Success();
+        }
+        catch (ArgumentException ex)
+        {
+            return Error.Validation(ex.Message);
+        }
     }
 }

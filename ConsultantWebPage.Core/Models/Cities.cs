@@ -40,6 +40,19 @@ public class Cities : IEntity
         return new Cities(0, name, districtName);
     }
 
+    public Result<Cities> Update(string name, string districtName)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return Error.Validation("Nome da cidade é obrigatório.");
+        if (name.Length > 100) return Error.Validation("Nome da cidade não pode exceder 100 caracteres.");
+        if (string.IsNullOrWhiteSpace(districtName)) return Error.Validation("Nome do distrito é obrigatório.");
+        if (districtName.Length > 100) return Error.Validation("Nome do distrito não pode exceder 100 caracteres.");
+
+        CityName = name;
+        DistrictName = districtName;
+
+        return this;
+    }
+
     public int GetId() => CityId;
 
         public void SetId(int id)

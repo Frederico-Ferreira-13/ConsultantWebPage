@@ -87,10 +87,7 @@ Interfaces/Services/
  IPostsServices.cs
  IPropertyEvaluationServices.cs
  IRatingsServices.cs
- IRealEstateCategoriesServices.cs
- IRealEstateMediaServices.cs
  IRealEstateServices.cs
- IRealEstateTypeServices.cs
  ITestimonialsServices.cs
  ITokenService.cs
  IUsersServices.cs

@@ -68,8 +68,6 @@ PasswordHasherService.cs
 PostsServices.cs
 PropertyEvaluationServices.cs
 RatingsServices.cs
-RealEstateCategoriesService.cs
-RealEstateMediaService.cs
 RealEstateServices.cs
 TestimonialsServices.cs
 TokenService.cs
