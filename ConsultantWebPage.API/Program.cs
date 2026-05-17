@@ -70,6 +70,9 @@ builder.Services.AddCors(options => {
     });
 });
 
+builder.Services.AddControllers()
+    .AddApplicationPart(typeof(ConsultantWebPage.API.Controller.RealEstateController).Assembly);
+
 // --- 5. CONFIGURAÇÃO BASE DA API ---
 builder.Services.AddControllers(); 
 builder.Services.AddEndpointsApiExplorer();

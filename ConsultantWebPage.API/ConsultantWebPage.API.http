@@ -1,6 +1,6 @@
-@ConsultantWebPage.API_HostAddress = http://localhost:5170
+@HostAddress = http://localhost:5170
 
-GET {{ConsultantWebPage.API_HostAddress}}/weatherforecast/
+GET {{HostAddress}}/api/realestate
 Accept: application/json
 
 ###
