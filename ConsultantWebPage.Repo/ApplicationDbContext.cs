@@ -40,6 +40,13 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Entity<Leads>(entity => {
+            entity.OwnsOne(l => l.Contact, contact => {
+                contact.Property(c => c.Email).HasMaxLength(255).IsRequired();
+                contact.Property(c => c.PhoneNumber).HasMaxLength(20);
+            });
+});
+
         // 1. Configuração de Imóveis
         modelBuilder.Entity<RealEstate>(entity => {
             entity.ToTable("RealEstate");

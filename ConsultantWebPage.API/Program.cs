@@ -3,6 +3,8 @@ using ConsultantWebPage.Repo;
 using ConsultantWebPage.Services;
 using ConsultantWebPage.Contracts.Interfaces.Services;
 using ConsultantWebPage.Contracts.Interfaces.Repo;
+using Microsoft.Extensions.Options;
+using ConsultantWebPage.Core.Common;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -54,6 +56,11 @@ builder.Services.AddScoped<IRealEstateServices, RealEstateServices>();
 builder.Services.AddScoped<ITestimonialsServices, TestimonialsServices>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUsersServices, UsersServices>();
+
+builder.Services.Configure<JwtSettings>(
+    builder.Configuration.GetSection("JwtSettings"));
+builder.Services.AddSingleton(sp =>
+    sp.GetRequiredService<IOptions<JwtSettings>>().Value);
 
 // --- 5. CONFIGURAÇÃO BASE DA API ---
 builder.Services.AddControllers(); 
