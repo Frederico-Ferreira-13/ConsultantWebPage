@@ -5,7 +5,7 @@ using ConsultantWebPage.Contracts.Interfaces.Repo;
 
 namespace ConsultantWebPage.Services;
 
-public class TestimonialsServices
+public class TestimonialsServices : ITestimonialsServices
 {
     private readonly IUnitOfWork _unitOfWork;
 

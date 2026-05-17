@@ -22,6 +22,15 @@ builder.Services.AddScoped<ILeadsRepository, LeadsRepository>();
 builder.Services.AddScoped<IPostsRepository, PostsRepository>();
 builder.Services.AddScoped<IPropertyEvaluationRepository, PropertyEvaluationRepository>();
 builder.Services.AddScoped<IRatingsRepository, RatingsRepository>();
+builder.Services.AddScoped<IRealEstateRepository, RealEstateRepository>();
+builder.Services.AddScoped<IRealEstateMediaRepository, RealEstateMediaRepository>();
+builder.Services.AddScoped<IRealEstateTypeRepository, RealEstateTypeRepository>();
+builder.Services.AddScoped<IRealEstateCategoriesRepository, RealEstateCategoriesRepository>();
+builder.Services.AddScoped<ITestimonialsRepository, TestimonialsRepository>();
+builder.Services.AddScoped<IUsersRepository, UsersRepository>();
+builder.Services.AddScoped<IUsersRoleRepository, UsersRoleRepository>();
+builder.Services.AddScoped<IUserSettingRepository, UserSettingRepository>();
+
 // Adiciona os outros se o teu colega os terminar (RealEstate, etc.)
 
 // --- 3. REGISTO DA UNIT OF WORK ---
@@ -30,21 +39,27 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 // --- 4. REGISTO DOS TEUS SERVIÇOS (Injeção de Dependência) ---
 // Usando os nomes com "Services" (plural) para bater certo com as interfaces do teu colega
 builder.Services.AddScoped<IAboutMeServices, AboutMeServices>();
+builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<ICategoryServices, CategoryServices>();
 builder.Services.AddScoped<ICitiesServices, CitiesServices>();
-builder.Services.AddScoped<ILeadsServices, LeadsServices>();
+builder.Services.AddScoped<ICloudService, CloudService>();
+builder.Services.AddScoped<ICommentsServices, CommentsService>();
 builder.Services.AddScoped<IFavoritesServices, FavoritesServices>();
+builder.Services.AddScoped<ILeadsServices, LeadsServices>();
+builder.Services.AddScoped<IPasswordHasherService, PasswordHasherService>();
 builder.Services.AddScoped<IPostsServices, PostsServices>();
-builder.Services.AddScoped<IRatingsServices, RatingsServices>();
 builder.Services.AddScoped<IPropertyEvaluationServices, PropertyEvaluationServices>();
+builder.Services.AddScoped<IRatingsServices, RatingsServices>();
 builder.Services.AddScoped<IRealEstateServices, RealEstateServices>();
 builder.Services.AddScoped<ITestimonialsServices, TestimonialsServices>();
+builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUsersServices, UsersServices>();
 
 // --- 5. CONFIGURAÇÃO BASE DA API ---
 builder.Services.AddControllers(); 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
@@ -61,21 +76,4 @@ app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
-// Podes manter o weatherforecast para testes rápidos se quiseres, ou apagar
-app.MapGet("/weatherforecast", () =>
-{
-    var summaries = new[] { "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching" };
-    return Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast(DateOnly.FromDateTime(DateTime.Now.AddDays(index)), Random.Shared.Next(-20, 55), summaries[Random.Shared.Next(summaries.Length)]))
-        .ToArray();
-})
-.WithName("GetWeatherForecast")
-.WithOpenApi();
-
 app.Run();
-
-// Definição do Record para o exemplo
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

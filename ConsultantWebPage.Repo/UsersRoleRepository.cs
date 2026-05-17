@@ -10,9 +10,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ConsultantWebPage.Repo;
 
-public class UserRoleRepository : GenericRepository<UsersRole>, IUsersRoleRepository
+public class UsersRoleRepository : GenericRepository<UsersRole>, IUsersRoleRepository
 {
-    public UserRoleRepository(ApplicationDbContext context) : base(context)
+    public UsersRoleRepository(ApplicationDbContext context) : base(context)
     {        
     }
 
