@@ -1,4 +1,3 @@
-// EF Core types should be available via project package references.
 using ConsultantWebPage.Core.Models;
 using ConsultantWebPage.Core.Models.ValueObjects;
 using Microsoft.EntityFrameworkCore;
@@ -20,7 +19,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Category> Categories { get; set; }
     public DbSet<CategoryType> CategoryTypes { get; set; }
     public DbSet<Cities> Cities { get; set; }
-    
+
     // Interação e Marketing
     public DbSet<AboutMe> AboutMe { get; set; }
     public DbSet<Leads> Leads { get; set; }
@@ -28,7 +27,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Testimonials> Testimonials { get; set; }
     public DbSet<Posts> Posts { get; set; }
     public DbSet<Comments> Comments { get; set; }
-    
+
     // Utilizadores e Sistema
     public DbSet<Users> Users { get; set; }
     public DbSet<UsersRole> UsersRoles { get; set; }
@@ -40,95 +39,220 @@ public class ApplicationDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Leads>(entity => {
-            entity.OwnsOne(l => l.Contact, contact => {
-                contact.Property(c => c.Email).HasMaxLength(255).IsRequired();
-                contact.Property(c => c.PhoneNumber).HasMaxLength(20);
-            });
-});
-
-        // 1. Configuração de Imóveis
-        modelBuilder.Entity<RealEstate>(entity => {
-            entity.ToTable("RealEstate");
-            // Configuração dos Value Objects (Address, Money) se os usares
-            entity.OwnsOne(e => e.Address); 
-            entity.Property(e => e.Price).HasColumnType("decimal(18,2)");
+        modelBuilder.Entity<UsersRole>(entity =>
+        {
+            entity.ToTable("UserRoles");
+            entity.HasKey(r => r.UsersRoleId);
+            entity.Property(r => r.RoleName).IsRequired().HasMaxLength(50);
+            entity.HasIndex(r => r.RoleName).IsUnique();
         });
 
-        // 2. Tabela de Ligação (Many-to-Many) para Categorias
-        modelBuilder.Entity<RealEstateCategories>()
-            .HasKey(rc => new { rc.RealEstateId, rc.CategoriesId });
-
-        // 3. Avaliações (Property Evaluation)
-        modelBuilder.Entity<PropertyEvaluations>(entity => 
-    {
-        entity.ToTable("PropertyEvaluation");
-        entity.HasKey(e => e.EvaluationId);
-
-        // ClientContact aqui é uma STRING simples na tua classe, não um Value Object
-        entity.Property(e => e.ClientContact)
-              .IsRequired()
-              .HasMaxLength(255);
-
-        entity.Property(e => e.ClientName)
-              .IsRequired()
-              .HasMaxLength(255);
-
-        // Configuração da Precisão Decimal para a Área
-        entity.Property(e => e.Area)
-              .HasColumnType("decimal(18,2)");
-
-        entity.Property(e => e.Status)
-              .HasMaxLength(50)
-              .HasDefaultValue("Pending");
-
-        // Relacionamento com o Consultor (User)
-        entity.HasOne(e => e.Consultant)
-              .WithMany() // Se o User não tiver uma coleção de Evaluations, deixa vazio
-              .HasForeignKey(e => e.ConsultantId)
-              .OnDelete(DeleteBehavior.Cascade);
-        });
-
-        // 4. Configuração de Utilizadores e Roles
-        modelBuilder.Entity<Users>(entity => {
+        modelBuilder.Entity<Users>(entity =>
+        {
             entity.ToTable("Users");
             entity.HasKey(u => u.UserId);
-            entity.OwnsOne(u => u.Contact, contact => 
+
+            entity.Property(u => u.FullName).IsRequired().HasMaxLength(255);
+            entity.Property(u => u.UserName).IsRequired().HasMaxLength(255);
+            entity.HasIndex(u => u.UserName).IsUnique();
+
+            entity.OwnsOne(u => u.Contact, contact =>
+            {
+                contact.Property(c => c.Email)
+                    .HasColumnName("Email")
+                    .HasMaxLength(255)
+                    .IsRequired();
+                contact.HasIndex(c => c.Email).IsUnique();
+
+                contact.Property(c => c.PhoneNumber)
+                    .HasColumnName("Phone")
+                    .HasMaxLength(50);
+            });
+
+            entity.Property(u => u.PasswordHash).IsRequired();
+            entity.Property(u => u.Salt).IsRequired();
+            entity.Property(u => u.IsActive).HasDefaultValue(true);
+            entity.Property(u => u.IsApproved).HasDefaultValue(false);
+
+            entity.Property(u => u.UsersRoleId).HasColumnName("UserRoleId");
+
+            entity.HasOne(u => u.Role)
+                .WithMany()
+                .HasForeignKey(u => u.UsersRoleId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<UserSettings>(entity =>
         {
-            contact.Property(c => c.Email).HasMaxLength(255).IsRequired();
-            // Adiciona aqui um índice único para o Email dentro do Value Object
-            contact.HasIndex(c => c.Email).IsUnique(); 
+            entity.ToTable("UserSettings");
+            entity.HasKey(s => s.UserSettingsId);
+            entity.HasIndex(s => s.UserId).IsUnique();
+            entity.Property(s => s.Theme).HasMaxLength(50).HasDefaultValue("Light");
+            entity.Property(s => s.Language).HasMaxLength(10).HasDefaultValue("pt-PT");
+            entity.Property(s => s.ReceiveNotifications).HasDefaultValue(true);
         });
 
-        entity.Property(u => u.FullName).IsRequired().HasMaxLength(255);
-        entity.Property(u => u.UserName).IsRequired().HasMaxLength(255);
-        
-        // Relacionamento com a Role
-        entity.HasOne(u => u.Role)
-              .WithMany()
-              .HasForeignKey(u => u.UsersRoleId)
-              .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<CategoryType>(entity =>
+        {
+            entity.ToTable("CategoryType");
+            entity.HasKey(ct => ct.CategoryTypeId);
+            entity.Property(ct => ct.TypeName).IsRequired().HasMaxLength(100);
+            entity.HasIndex(ct => ct.TypeName).IsUnique();
         });
 
-        // 5. Configuração de Favoritos (Chave Composta)
-        modelBuilder.Entity<Favorites>()
-            .HasKey(f => new { f.UserId, f.RealEstateId });
+        modelBuilder.Entity<Category>(entity =>
+        {
+            entity.ToTable("Category");
+            entity.HasKey(c => c.CategoriesId);
+            entity.Property(c => c.CategoryName).IsRequired().HasMaxLength(100);
 
-        // 6. Configuração de Ratings (Chave Composta)
+            entity.HasOne(c => c.ParentCategory)
+                .WithMany(c => c.SubCategories)
+                .HasForeignKey(c => c.ParentCategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(c => c.CategoryType)
+                .WithMany()
+                .HasForeignKey(c => c.CategoryTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Cities>(entity =>
+        {
+            entity.ToTable("Cities");
+            entity.HasKey(c => c.CityId);
+            entity.Property(c => c.CityName).IsRequired().HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<RealEstateType>(entity =>
+        {
+            entity.ToTable("RealEstateType");
+            entity.HasKey(r => r.RealEstateTypeId);
+            entity.Property(r => r.TypeName).IsRequired().HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<RealEstate>(entity =>
+        {
+            entity.ToTable("RealEstate");
+            entity.HasKey(e => e.RealEstateId);
+
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Status).HasMaxLength(50).HasDefaultValue("Disponível");
+            entity.Property(e => e.IsFeatured).HasDefaultValue(false);
+
+            entity.Property(e => e.RealEstateTypeId).HasColumnName("RealEstateTypeId");
+            entity.Property(e => e.ConsultantId).HasColumnName("ConsultantId");
+            entity.Property(e => e.CityId).HasColumnName("CityId");
+
+            entity.OwnsOne(e => e.Address, address =>
+            {
+                address.Property(a => a.Street)
+                    .HasColumnName("Address")
+                    .HasMaxLength(255);
+                address.Property(a => a.PostalCode)
+                    .HasColumnName("PostalCode")
+                    .HasMaxLength(20);
+
+                address.Property(a => a.Number).HasColumnName("Address_Number").HasDefaultValue("N/A");
+                address.Property(a => a.City).HasColumnName("Address_City").HasDefaultValue("N/A");
+                address.Property(a => a.Country).HasColumnName("Address_Country").HasDefaultValue("Portugal");
+                address.Property(a => a.Complement).HasColumnName("Address_Complement").IsRequired(false);
+            });
+
+            // Money Value Object → mapeia para colunas Price e Currency da tua BD
+            entity.OwnsOne(e => e.Price, price =>
+            {
+                price.Property(p => p.Amount)
+                    .HasColumnName("Price")
+                    .HasColumnType("decimal(18,2)");
+                price.Property(p => p.Currency)
+                    .HasColumnName("Currency")
+                    .HasMaxLength(10)
+                    .HasDefaultValue("EUR");
+            });
+
+            entity.HasOne(e => e.RealEstateType)
+                .WithMany()
+                .HasForeignKey(e => e.RealEstateTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Consultant)
+                .WithMany()
+                .HasForeignKey(e => e.ConsultantId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.City)
+                .WithMany()
+                .HasForeignKey(e => e.CityId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<RealEstateCategories>(entity =>
+        {
+            entity.ToTable("RealEstateCategories");
+            entity.HasKey(rc => new { rc.RealEstateId, rc.CategoriesId });
+        });
+
+        modelBuilder.Entity<RealEstateMedia>(entity =>
+        {
+            entity.ToTable("RealEstateMedia");
+            entity.HasKey(m => m.MediaId);
+        });
+
+        modelBuilder.Entity<Leads>(entity =>
+        {
+            entity.ToTable("Leads");
+            entity.HasKey(l => l.InquiryId);
+
+            entity.Property(l => l.ClientName).IsRequired().HasMaxLength(255);
+            entity.Property(l => l.Status).HasMaxLength(50).HasDefaultValue("Novo");
+
+            entity.OwnsOne(l => l.Contact, contact =>
+            {
+                contact.Property(c => c.Email)
+                    .HasColumnName("ClientEmail")
+                    .HasMaxLength(255);
+                contact.Property(c => c.PhoneNumber)
+                    .HasColumnName("ClientPhone")
+                    .HasMaxLength(50);
+            });
+
+            entity.HasOne(l => l.RealEstate)
+                .WithMany()
+                .HasForeignKey(l => l.RealEstateId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Favorites>(entity =>
+        {
+            entity.ToTable("Favorites");
+            entity.HasKey(f => f.FavoritesId);
+            entity.HasIndex(f => new { f.UserId, f.RealEstateId }).IsUnique();
+
+            entity.HasOne(f => f.User)
+                .WithMany()
+                .HasForeignKey(f => f.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(f => f.RealEstate)
+                .WithMany()
+                .HasForeignKey(f => f.RealEstateId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
         modelBuilder.Entity<Ratings>(entity =>
         {
-            entity.ToTable("Ratings"); // Garante o nome correto da tabela
+            entity.ToTable("Ratings");
             entity.HasKey(r => r.RatingsId);
             entity.HasIndex(r => new { r.UserId, r.RealEstateId }).IsUnique();
 
             entity.Property(r => r.RatingValue)
                 .HasConversion(
-                    v => v!.Value,           // para a base de dados: StarRating → int
-                    v => StarRating.Create(v) // da base de dados: int → StarRating
+                    v => v!.Value,
+                    v => StarRating.Create(v)
                 )
                 .HasColumnName("RatingValue")
                 .IsRequired();
-           
 
             entity.HasOne(r => r.RealEstate)
                 .WithMany()
@@ -140,29 +264,76 @@ public class ApplicationDbContext : DbContext
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
         });
-            
-        // 7. Testemunhos e Posts
-        modelBuilder.Entity<Testimonials>().ToTable("Testimonials");
-        modelBuilder.Entity<Posts>().ToTable("Posts");
 
-        modelBuilder.Entity<CategoryType>(entity => {
-            entity.ToTable("CategoryType");
-            entity.HasIndex(ct => ct.TypeName).IsUnique(); 
+        modelBuilder.Entity<Comments>(entity =>
+        {
+            entity.ToTable("Comments");
+            entity.HasKey(c => c.CommentsId);
+
+            entity.HasOne(c => c.RealEstate)
+                .WithMany()
+                .HasForeignKey(c => c.RealEstateId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(c => c.Users)
+                .WithMany()
+                .HasForeignKey(c => c.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<Category>(entity => {
-            entity.ToTable("Categories");
-            entity.HasKey(c => c.CategoriesId);
-    
-        entity.HasOne(c => c.ParentCategory)
-            .WithMany(c => c.SubCategories)
-            .HasForeignKey(c => c.ParentCategoryId)
-            .OnDelete(DeleteBehavior.Restrict); 
+        modelBuilder.Entity<Testimonials>(entity =>
+        {
+            entity.ToTable("Testimonials");
+            entity.HasKey(t => t.TestimonialId);
+            entity.Property(t => t.ClientName).IsRequired().HasMaxLength(255);
+            entity.Property(t => t.IsVisible).HasDefaultValue(false);
 
-        entity.HasOne(c => c.CategoryType)
-            .WithMany()
-            .HasForeignKey(c => c.CategoryTypeId)
-            .OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(t => t.Consultant)
+                .WithMany()
+                .HasForeignKey(t => t.ConsultantId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Posts>(entity =>
+        {
+            entity.ToTable("Posts");
+            entity.HasKey(p => p.PostId);
+            entity.Property(p => p.Title).IsRequired().HasMaxLength(255);
+            entity.HasIndex(p => p.Title).IsUnique();
+            entity.Property(p => p.Slug).HasMaxLength(255);
+            entity.HasIndex(p => p.Slug).IsUnique();
+            entity.Property(p => p.Status).HasMaxLength(50).HasDefaultValue("Draft");
+            entity.Property(p => p.IsPublished).HasDefaultValue(false);
+            entity.Property(p => p.ViewCount).HasDefaultValue(0);
+            entity.Property(p => p.Summary).HasMaxLength(500);
+
+            entity.HasOne(p => p.Author)
+                .WithMany()
+                .HasForeignKey(p => p.AuthorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<PropertyEvaluations>(entity =>
+        {
+            entity.ToTable("PropertyEvaluations");
+            entity.HasKey(e => e.EvaluationId);
+
+            entity.Property(e => e.ClientContact).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.ClientName).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Area).HasColumnType("decimal(18,2)");
+            entity.Property(e => e.Status).HasMaxLength(50).HasDefaultValue("Pending");
+
+            entity.HasOne(e => e.Consultant)
+                .WithMany()
+                .HasForeignKey(e => e.ConsultantId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+       
+        modelBuilder.Entity<AboutMe>(entity =>
+        {
+            entity.ToTable("AboutMe");
+            entity.HasKey(a => a.AboutMeId);
+            entity.HasIndex(a => a.UserId).IsUnique();
         });
     }
 }

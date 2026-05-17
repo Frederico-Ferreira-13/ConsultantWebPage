@@ -62,6 +62,14 @@ builder.Services.Configure<JwtSettings>(
 builder.Services.AddSingleton(sp =>
     sp.GetRequiredService<IOptions<JwtSettings>>().Value);
 
+builder.Services.AddCors(options => {
+    options.AddPolicy("FrontendPolicy", policy => {
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // --- 5. CONFIGURAÇÃO BASE DA API ---
 builder.Services.AddControllers(); 
 builder.Services.AddEndpointsApiExplorer();
@@ -78,7 +86,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseCors("FrontendPolicy");
 // Importante para as rotas dos Controllers funcionarem
 app.UseAuthorization();
 app.MapControllers();
