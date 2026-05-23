@@ -186,7 +186,7 @@ public class RealEstateController : ControllerBase
     }
 
     [HttpPut("{id:int}/categories")]
-    public async Task<IActionResult> SyncCategories(int id, [FromBody] SyncCategoriesRequest request)
+    public async Task<IActionResult> SyncCategories(int id, [FromBody] RealEstateSyncCategoriesRequest request)
     {
         var result = await _realEstateServices.SyncPropertyCategoriesAsync(id, request.CategoryIds);
         if (!result.IsSuccessful)
@@ -235,4 +235,4 @@ public record AddCommentRequest(
     string CommentText
 );
  
-public record SyncCategoriesRequest(IEnumerable<int> CategoryIds);
+public record RealEstateSyncCategoriesRequest(IEnumerable<int> CategoryIds);
