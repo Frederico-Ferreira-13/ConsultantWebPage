@@ -1,6 +1,7 @@
 using ConsultantWebPage.Contracts.Interfaces.Services;
 using ConsultantWebPage.Core.Models;
 using ConsultantWebPage.Core.Models.ValueObjects;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ConsultantWebPage.API.Controllers;
@@ -10,10 +11,13 @@ namespace ConsultantWebPage.API.Controllers;
 public class RealEstateController : ControllerBase
 {
     private readonly IRealEstateServices _realEstateServices;
+    private readonly IPropertyImportService _importService;
 
-    public RealEstateController(IRealEstateServices realEstateServices)
+    public RealEstateController(IRealEstateServices realEstateServices, 
+        IPropertyImportService importService)
     {
         _realEstateServices = realEstateServices;
+        _importService = importService;
     }
 
     [HttpGet]
@@ -194,6 +198,21 @@ public class RealEstateController : ControllerBase
  
         return Ok(result.Message);
     }
+
+    [Authorize]
+    [HttpPost("import")]
+    public async Task<IActionResult> ImportFromUrl([FromBody] ImportPropertyRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Url))
+            return BadRequest("O URL é obrigatório.");
+
+        var result = await _importService.ImportFromUrlAsync(request.Url);
+
+        if (!result.Success)
+            return BadRequest(new { message = "Não foi possível importar dados deste URL.", warnings = result.Warnings });
+
+        return Ok(result);
+    }
 }
 
 public record CreateRealEstateRequest(
@@ -236,3 +255,5 @@ public record AddCommentRequest(
 );
  
 public record RealEstateSyncCategoriesRequest(IEnumerable<int> CategoryIds);
+
+public record ImportPropertyRequest(string Url);

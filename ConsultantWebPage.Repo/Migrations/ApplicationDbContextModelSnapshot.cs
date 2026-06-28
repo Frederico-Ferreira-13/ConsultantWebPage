@@ -40,19 +40,23 @@ namespace ConsultantWebPage.Repo.Migrations
 
                     b.Property<string>("SocialUrl_Facebook")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("SocialURL_Facebook");
 
                     b.Property<string>("SocialUrl_Instagram")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("SocialURL_Instagram");
 
                     b.Property<string>("SocialUrl_Linkedin")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("SocialURL_LinkedIn");
 
                     b.Property<string>("SocialUrl_X")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("SocialURL_X");
 
                     b.Property<int>("UserId")
                         .HasColumnType("int");
@@ -441,9 +445,6 @@ namespace ConsultantWebPage.Repo.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RealEstateId"));
 
-                    b.Property<int?>("CitiesCityId")
-                        .HasColumnType("int");
-
                     b.Property<int>("CityId")
                         .HasColumnType("int")
                         .HasColumnName("CityId");
@@ -477,9 +478,6 @@ namespace ConsultantWebPage.Repo.Migrations
                         .HasColumnType("int")
                         .HasColumnName("RealEstateTypeId");
 
-                    b.Property<int?>("RealEstateTypeId1")
-                        .HasColumnType("int");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -497,15 +495,11 @@ namespace ConsultantWebPage.Repo.Migrations
 
                     b.HasKey("RealEstateId");
 
-                    b.HasIndex("CitiesCityId");
-
                     b.HasIndex("CityId");
 
                     b.HasIndex("ConsultantId");
 
                     b.HasIndex("RealEstateTypeId");
-
-                    b.HasIndex("RealEstateTypeId1");
 
                     b.ToTable("RealEstate", (string)null);
                 });
@@ -534,12 +528,16 @@ namespace ConsultantWebPage.Repo.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("MediaId"));
 
                     b.Property<bool>("IsMain")
-                        .HasColumnType("bit");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
 
                     b.Property<string>("MediaType")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(50)")
+                        .HasDefaultValue("image");
 
                     b.Property<string>("MediaUrl")
                         .IsRequired()
@@ -744,8 +742,8 @@ namespace ConsultantWebPage.Repo.Migrations
             modelBuilder.Entity("ConsultantWebPage.Core.Models.AboutMe", b =>
                 {
                     b.HasOne("ConsultantWebPage.Core.Models.Users", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
+                        .WithOne()
+                        .HasForeignKey("ConsultantWebPage.Core.Models.AboutMe", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -899,12 +897,8 @@ namespace ConsultantWebPage.Repo.Migrations
 
             modelBuilder.Entity("ConsultantWebPage.Core.Models.RealEstate", b =>
                 {
-                    b.HasOne("ConsultantWebPage.Core.Models.Cities", null)
-                        .WithMany("RealEstates")
-                        .HasForeignKey("CitiesCityId");
-
                     b.HasOne("ConsultantWebPage.Core.Models.Cities", "City")
-                        .WithMany()
+                        .WithMany("RealEstates")
                         .HasForeignKey("CityId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -916,14 +910,10 @@ namespace ConsultantWebPage.Repo.Migrations
                         .IsRequired();
 
                     b.HasOne("ConsultantWebPage.Core.Models.RealEstateType", "RealEstateType")
-                        .WithMany()
+                        .WithMany("RealEstates")
                         .HasForeignKey("RealEstateTypeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.HasOne("ConsultantWebPage.Core.Models.RealEstateType", null)
-                        .WithMany("RealEstates")
-                        .HasForeignKey("RealEstateTypeId1");
 
                     b.OwnsOne("ConsultantWebPage.Core.Models.ValueObjects.Address", "Address", b1 =>
                         {
@@ -1018,7 +1008,7 @@ namespace ConsultantWebPage.Repo.Migrations
                     b.HasOne("ConsultantWebPage.Core.Models.Category", "Category")
                         .WithMany()
                         .HasForeignKey("CategoriesId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("ConsultantWebPage.Core.Models.RealEstate", "RealEstate")

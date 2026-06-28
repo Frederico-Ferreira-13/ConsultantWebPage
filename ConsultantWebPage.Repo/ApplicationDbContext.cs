@@ -172,7 +172,7 @@ public class ApplicationDbContext : DbContext
             });
 
             entity.HasOne(e => e.RealEstateType)
-                .WithMany()
+                .WithMany(t => t.RealEstates)
                 .HasForeignKey(e => e.RealEstateTypeId)
                 .OnDelete(DeleteBehavior.Restrict);
 
@@ -182,7 +182,7 @@ public class ApplicationDbContext : DbContext
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.City)
-                .WithMany()
+                .WithMany(c => c.RealEstates)
                 .HasForeignKey(e => e.CityId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
@@ -190,13 +190,37 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<RealEstateCategories>(entity =>
         {
             entity.ToTable("RealEstateCategories");
-            entity.HasKey(rc => new { rc.RealEstateId, rc.CategoriesId });
+            
+            // Configuração da Chave Composta
+            entity.HasKey(re => new { re.RealEstateId, re.CategoriesId });
+
+            // Configuração das relações com as tabelas pai
+            entity.HasOne(re => re.RealEstate)
+                .WithMany(r => r.RealEstateCategories)
+                .HasForeignKey(re => re.RealEstateId)
+                .OnDelete(DeleteBehavior.Cascade); // Se o imóvel for apagado, o link desaparece
+
+            entity.HasOne(re => re.Category)
+                .WithMany()
+                .HasForeignKey(re => re.CategoriesId)
+                .OnDelete(DeleteBehavior.Restrict); // Evita apagar a categoria se houver imóveis ligados
         });
 
         modelBuilder.Entity<RealEstateMedia>(entity =>
         {
             entity.ToTable("RealEstateMedia");
             entity.HasKey(m => m.MediaId);
+
+            // Validação de nomes de colunas conforme o SQL
+            entity.Property(m => m.MediaUrl).IsRequired();
+            entity.Property(m => m.MediaType).HasMaxLength(50).HasDefaultValue("image");
+            entity.Property(m => m.IsMain).HasDefaultValue(false);
+
+            // Relação 1:N (Um Imóvel tem muitas Médias)
+            entity.HasOne(m => m.RealEstate)
+                .WithMany() // Se quiseres navegar a partir do Imóvel, precisarias de adicionar uma coleção em RealEstate
+                .HasForeignKey(m => m.RealEstateId)
+                .OnDelete(DeleteBehavior.Cascade); // Se o imóvel for apagado, as fotos/vídeos também são
         });
 
         modelBuilder.Entity<Leads>(entity =>
@@ -333,7 +357,14 @@ public class ApplicationDbContext : DbContext
         {
             entity.ToTable("AboutMe");
             entity.HasKey(a => a.AboutMeId);
+
+            // Garante que um utilizador tem apenas um registo de "AboutMe"
             entity.HasIndex(a => a.UserId).IsUnique();
+
+            entity.HasOne(a => a.User)
+                .WithOne() // Assumindo que a relação é 1:1 com o utilizador
+                .HasForeignKey<AboutMe>(a => a.UserId)
+                .OnDelete(DeleteBehavior.Cascade); // Se o utilizador for eliminado, o AboutMe também é
         });
     }
 }

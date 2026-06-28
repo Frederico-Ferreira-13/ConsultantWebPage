@@ -20,7 +20,7 @@ public abstract class GenericRepository<TEntity> : IGenericRepository<TEntity>
 
     public virtual async Task<Result<TEntity>> GetByIdAsync(int id)
     {        
-        var entity = await _dbSet.FirstOrDefaultAsync(e => e.GetId() == id);
+        var entity = await _dbSet.FindAsync(id);
 
         if (entity == null)
             return Result<TEntity>.Failure(Error.NotFound($"Registo {typeof(TEntity).Name} com ID {id} não encontrado."));
@@ -61,6 +61,7 @@ public abstract class GenericRepository<TEntity> : IGenericRepository<TEntity>
 
     public virtual async Task<bool> ExistsAsync(int id)
     {
-        return await _dbSet.AnyAsync(e => e.GetId() == id);
+        var entity = await _dbSet.FindAsync(id);
+        return entity != null;
     }
 }

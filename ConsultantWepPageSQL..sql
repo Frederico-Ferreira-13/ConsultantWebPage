@@ -47,6 +47,7 @@ CREATE TABLE Users (
     Email NVARCHAR(255) UNIQUE NOT NULL,
     Phone NVARCHAR(50),
     PasswordHash NVARCHAR(MAX) NOT NULL,
+    Salt NVARCHAR(MAX) NOT NULL, -- Adicionado para alinhar com o teu modelo
     ProfilePicture NVARCHAR(MAX),
     FacebookUrl NVARCHAR(MAX),
     InstagramUrl NVARCHAR(MAX),
@@ -54,6 +55,7 @@ CREATE TABLE Users (
     IsActive BIT DEFAULT 1,
     IsApproved BIT DEFAULT 0,
     CreatedAt DATETIME DEFAULT GETDATE(),
+    LastUpdatedAt DATETIME NULL, -- Adicionado para alinhar com o teu modelo
     DeletedAt DATETIME NULL,
     CONSTRAINT FK_Users_Roles FOREIGN KEY (UserRoleId) REFERENCES UserRoles(UsersRoleId)
 );
@@ -229,3 +231,81 @@ CREATE TABLE Posts (
     CONSTRAINT FK_Posts_Category FOREIGN KEY (CategoryId) REFERENCES Category(CategoriesId)
 );
 GO
+
+INSERT INTO CategoryType (TypeName) 
+VALUES 
+('Venda'),
+('Arrendamento'),
+('Serviços');
+GO
+
+INSERT INTO Category (CategoryName, CategoryTypeId, ParentCategoryId) 
+VALUES 
+('Apartamentos', 1, NULL),
+('Moradias', 1, NULL),
+('Escritórios', 3, NULL);
+
+INSERT INTO Category (CategoryName, CategoryTypeId, ParentCategoryId) 
+VALUES 
+('T1', 1, 1),
+('T2', 1, 1),
+('Vivenda Geminada', 1, 2);
+
+INSERT INTO UserRoles (RoleName) 
+VALUES ('Administrador');
+
+INSERT INTO Users (Username, Email, PasswordHash, Salt, FullName, UserRoleId) 
+VALUES 
+('admin', 
+ 'admin@consultant.pt', 
+ '$2a$12$bAtF/DyUseTdSQ7glhOGveDpbEtab3IJfxeVHy2nD2/y1PLsb07Rm', 
+ 'manual_salt', 
+ 'Administrador Principal', 
+ 1);
+
+ SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME = 'Users'
+ORDER BY ORDINAL_POSITION;
+
+SELECT UserId, UserName, Email, IsActive, IsApproved, CreatedAt 
+FROM Users 
+WHERE Email = 'admin@consultant.pt';
+
+SELECT COUNT(*) AS TotalUsers FROM Users;
+
+INSERT INTO Users (UserName, Email, Phone, PasswordHash, Salt, FullName, UserRoleId, IsActive, IsApproved, CreatedAt)
+VALUES (
+    'admin',
+    'admin@consultant.pt',
+    '910000000',
+    '$2a$12$bAtF/DyUseTdSQ7glhOGveDpbEtab3IJfxeVHy2nD2/y1PLsb07Rm',
+    'manual_salt',
+    'Administrador Principal',
+    1,
+    1,
+    1,
+    GETUTCDATE()
+);
+
+SELECT * FROM UserRoles;
+
+INSERT INTO UserRoles (RoleName) VALUES ('Admin');
+
+SELECT * FROM UserRoles;
+
+INSERT INTO Users (UserName, Email, Phone, PasswordHash, Salt, FullName, UserRoleId, IsActive, IsApproved, CreatedAt)
+VALUES (
+    'admin',
+    'admin@consultant.pt',
+    '910000000',
+    '$2a$12$bAtF/DyUseTdSQ7glhOGveDpbEtab3IJfxeVHy2nD2/y1PLsb07Rm',
+    'manual_salt',
+    'Administrador Principal',
+    1,
+    1,
+    1,
+    GETUTCDATE()
+);
+
+SELECT UserId, UserName, Email, IsActive, UserRoleId FROM Users;

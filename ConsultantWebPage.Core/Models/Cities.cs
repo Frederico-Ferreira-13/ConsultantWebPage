@@ -6,6 +6,7 @@ using ConsultantWebPage.Core.Common;
 
 namespace ConsultantWebPage.Core.Models;
 
+[Table("Cities")]
 public class Cities : IEntity
 {
     [Key]

@@ -5,6 +5,7 @@ using ConsultantWebPage.Core.Common;
 
 namespace ConsultantWebPage.Core.Models
 {
+    [Table("CategoryType")]
     public class CategoryType : IEntity
     {
         [Key]

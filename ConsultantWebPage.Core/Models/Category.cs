@@ -6,7 +6,8 @@ using ConsultantWebPage.Core.Common;
 
 namespace ConsultantWebPage.Core.Models
 {
-        public class Category : IEntity
+    [Table("Category")]
+    public class Category : IEntity
     {
         [Key]
         public int CategoriesId { get; protected set; }
@@ -73,6 +74,4 @@ namespace ConsultantWebPage.Core.Models
 
         public bool GetIsActive() => true; // Assuming categories are always active for this example
     }
-
 }
-

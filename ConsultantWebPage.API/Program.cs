@@ -5,6 +5,12 @@ using ConsultantWebPage.Contracts.Interfaces.Services;
 using ConsultantWebPage.Contracts.Interfaces.Repo;
 using Microsoft.Extensions.Options;
 using ConsultantWebPage.Core.Common;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using ConsultantWebPage.Services.Import;
+using Microsoft.OpenApi;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,14 +63,35 @@ builder.Services.AddScoped<ITestimonialsServices, TestimonialsServices>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUsersServices, UsersServices>();
 
+builder.Services.AddScoped<IPropertyImportProvider, MockImportProvider>();
+builder.Services.AddScoped<IPropertyImportService, PropertyImportService>();
+
 builder.Services.Configure<JwtSettings>(
     builder.Configuration.GetSection("JwtSettings"));
 builder.Services.AddSingleton(sp =>
     sp.GetRequiredService<IOptions<JwtSettings>>().Value);
 
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+            ValidAudience = builder.Configuration["JwtSettings:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecurityKey"]))
+        };
+    });   
+
 builder.Services.AddCors(options => {
     options.AddPolicy("FrontendPolicy", policy => {
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins(
+                "http://localhost:5173",
+                "http://localhost:5174"
+            )
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -76,7 +103,27 @@ builder.Services.AddControllers()
 // --- 5. CONFIGURAÇÃO BASE DA API ---
 builder.Services.AddControllers(); 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+const string SecuritySchemeId = "Bearer";
+
+builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Insere o token JWT assim: Bearer {o teu token}"
+    });
+ 
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference(SecuritySchemeId, document)] = new List<string>()
+    });
+});
+
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
@@ -90,7 +137,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("FrontendPolicy");
-// Importante para as rotas dos Controllers funcionarem
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 

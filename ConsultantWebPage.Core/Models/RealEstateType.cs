@@ -1,9 +1,11 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using ConsultantWebPage.Core.Common;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ConsultantWebPage.Core.Models
 {
+    [Table("RealEstateType")]
     public class RealEstateType : IEntity
     {
         [Key]
