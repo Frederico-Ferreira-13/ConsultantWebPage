@@ -6,6 +6,7 @@ namespace ConsultantWebPage.Contracts.Interfaces.Services;
 public interface ICategoryServices
 {
     Task<Result<Category>> GetCategoryByIdAsync(int categoryId);
+    Task<Result<Category>> GetCategoryByNameAsync(string categoryName);
     Task<Result<IEnumerable<Category>>> GetRootCategoriesAsync(); // Root não costuma precisar de ID se vier do contexto
     Task<Result<Category>> GetCategoryWithSubsAsync(int categoryId);
 

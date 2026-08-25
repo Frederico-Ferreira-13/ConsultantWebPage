@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
+import { API_BASE_URL } from "../../config/api";
 
 function FavoriteCard({ property, onRemove }) {
   return (
@@ -96,7 +97,7 @@ export default function Favorites() {
       setLoading(true);
       setError('');
       try {
-        const response = await fetch(`http://localhost:5170/api/favorites/${user.userId}`, {
+        const response = await fetch(`${API_BASE_URL}/favorites/${user.userId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         
@@ -117,7 +118,7 @@ export default function Favorites() {
 
   const handleRemove = async (realEstateId) => {
     try {
-      await fetch(`http://localhost:5170/api/favorites/toggle/${realEstateId}`, {
+      await fetch(`${API_BASE_URL}/favorites/toggle/${realEstateId}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });

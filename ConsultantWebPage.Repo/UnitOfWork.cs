@@ -22,7 +22,6 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IAboutMeRepository AboutMe { get; }
     public ICategoryRepository Categories { get; }
     public ICategoryTypeRepository CategoryTypes { get; }
-    public ICitiesRepository Citie { get; }
     public ICommentsRepository Comments { get; }
     public IFavoritesRepository Favorites { get; }
     public ILeadsRepository Leads { get; }
@@ -39,7 +38,10 @@ public class UnitOfWork : IUnitOfWork, IDisposable
     public IUsersRoleRepository UsersRole { get; }
     public ICitiesRepository Cities { get; }
 
-    public UnitOfWork(
+    // NOTA: existia também uma propriedade "Citie" (duplicada de "Cities") que nunca
+    // era inicializada no construtor — ficava sempre null. Removida. Usar sempre "Cities".
+
+   public UnitOfWork(
         ApplicationDbContext context,
         IConfiguration configuration,
         IAboutMeRepository aboutMe,
@@ -110,7 +112,16 @@ public class UnitOfWork : IUnitOfWork, IDisposable
 
     public async Task<int> CommitAsync()
     {
-        return await _context.SaveChangesAsync();
+        var affectedRows = await _context.SaveChangesAsync();
+
+        if (_scope != null)
+        {
+            _scope.Complete();
+            _scope.Dispose();
+            _scope = null;
+        }
+
+        return affectedRows;
     }
 
     public void Rollback()

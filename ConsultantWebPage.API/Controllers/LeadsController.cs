@@ -1,4 +1,5 @@
 using ConsultantWebPage.Contracts.Interfaces.Services;
+using ConsultantWebPage.Core.Common;
 using ConsultantWebPage.Core.Models;
 using ConsultantWebPage.Core.Models.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
@@ -17,7 +18,7 @@ public class LeadsController : ControllerBase
         _leadsService = leadsService;
     }
     
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpGet("consultant/{consultantId:int}")]
     public async Task<IActionResult> GetByConsultant(int consultantId)
     {
@@ -28,7 +29,7 @@ public class LeadsController : ControllerBase
         return BadRequest(result.Message);
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -64,7 +65,7 @@ public class LeadsController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = leadResult.Value!.InquiryId }, leadResult.Value);
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPatch("{id:int}/status")]
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] LeadUpdateStatusRequest request)
     {
@@ -78,7 +79,7 @@ public class LeadsController : ControllerBase
         return NoContent();
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPatch("{id:int}/assign")]
     public async Task<IActionResult> AssignConsultant(int id, [FromBody] LeadAssignRequest request)
     {

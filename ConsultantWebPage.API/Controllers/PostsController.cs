@@ -1,4 +1,5 @@
 using ConsultantWebPage.Contracts.Interfaces.Services;
+using ConsultantWebPage.Core.Common;
 using ConsultantWebPage.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -85,7 +86,7 @@ public class PostsController : ControllerBase
         return NoContent();
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreatePostRequest request)
     {
@@ -115,7 +116,7 @@ public class PostsController : ControllerBase
         return CreatedAtAction(nameof(GetBySlug), new { slug = result.Value!.Slug }, result.Value);
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdatePostRequest request)
     {
@@ -147,7 +148,7 @@ public class PostsController : ControllerBase
         return Ok(result.Value);
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {

@@ -47,7 +47,7 @@ CREATE TABLE Users (
     Email NVARCHAR(255) UNIQUE NOT NULL,
     Phone NVARCHAR(50),
     PasswordHash NVARCHAR(MAX) NOT NULL,
-    Salt NVARCHAR(MAX) NOT NULL, -- Adicionado para alinhar com o teu modelo
+    Salt NVARCHAR(MAX) NOT NULL,
     ProfilePicture NVARCHAR(MAX),
     FacebookUrl NVARCHAR(MAX),
     InstagramUrl NVARCHAR(MAX),
@@ -55,7 +55,7 @@ CREATE TABLE Users (
     IsActive BIT DEFAULT 1,
     IsApproved BIT DEFAULT 0,
     CreatedAt DATETIME DEFAULT GETDATE(),
-    LastUpdatedAt DATETIME NULL, -- Adicionado para alinhar com o teu modelo
+    LastUpdatedAt DATETIME NULL,
     DeletedAt DATETIME NULL,
     CONSTRAINT FK_Users_Roles FOREIGN KEY (UserRoleId) REFERENCES UserRoles(UsersRoleId)
 );
@@ -89,9 +89,9 @@ CREATE TABLE RealEstate (
     RealEstateId INT PRIMARY KEY IDENTITY(1,1),
     RealEstateTypeId INT NOT NULL,
     ConsultantId INT NOT NULL,
-    CityId INT NOT NULL,                -- Propriedade de localização corrigida
+    CityId INT NOT NULL,
     Title NVARCHAR(255) NOT NULL,
-    Description NVARCHAR(MAX),           -- Faltava a descrição detalhada
+    Description NVARCHAR(MAX),
     ThumbnailUrl NVARCHAR(MAX),
     ExternalSourceUrl NVARCHAR(MAX),
     ExternalReferenceId NVARCHAR(100),
@@ -130,7 +130,7 @@ GO
 
 CREATE TABLE Leads (
     InquiryId INT PRIMARY KEY IDENTITY(1,1),
-    RealEstateId INT NULL, 
+    RealEstateId INT NULL,
     ConsultantId INT NULL,
     ClientName NVARCHAR(255) NOT NULL,
     ClientEmail NVARCHAR(255),
@@ -166,7 +166,7 @@ CREATE TABLE Comments (
     DeletedAt DATETIME NULL,
     IsEdited BIT DEFAULT 0,
     IsApproved BIT DEFAULT 0,
-    ParentCommentId INT NULL,           -- Para permitir respostas
+    ParentCommentId INT NULL,
     CONSTRAINT FK_Comments_RealEstate FOREIGN KEY (RealEstateId) REFERENCES RealEstate(RealEstateId),
     CONSTRAINT FK_Comments_User FOREIGN KEY (UserId) REFERENCES Users(UserId),
     CONSTRAINT FK_Comments_Parent FOREIGN KEY (ParentCommentId) REFERENCES Comments(CommentsId)
@@ -198,7 +198,7 @@ GO
 CREATE TABLE PropertyEvaluations (
     EvaluationId INT PRIMARY KEY IDENTITY(1,1),
     ConsultantId INT NOT NULL,
-    UserId INT NULL,                    -- FK integrada: permite ligar a utilizador registado
+    UserId INT NULL,
     ClientName NVARCHAR(255),
     ClientContact NVARCHAR(255),
     PropertyType NVARCHAR(100),
@@ -207,6 +207,7 @@ CREATE TABLE PropertyEvaluations (
     Area DECIMAL(18, 2),
     Condition NVARCHAR(100),
     Status NVARCHAR(50) DEFAULT 'Pending',
+    VisitPreference NVARCHAR(255) NULL,
     CreatedAt DATETIME DEFAULT GETDATE(),
     CONSTRAINT FK_Evaluations_Consultant FOREIGN KEY (ConsultantId) REFERENCES Users(UserId),
     CONSTRAINT FK_Evaluations_User FOREIGN KEY (UserId) REFERENCES Users(UserId)
@@ -232,80 +233,85 @@ CREATE TABLE Posts (
 );
 GO
 
-INSERT INTO CategoryType (TypeName) 
-VALUES 
+SET IDENTITY_INSERT UserRoles ON;
+INSERT INTO UserRoles (UsersRoleId, RoleName) VALUES 
+(8, 'Administrador'),
+(9, 'Consultor'),
+(10, 'Cliente');
+SET IDENTITY_INSERT UserRoles OFF;
+GO
+
+INSERT INTO Users (
+    UserName, 
+    Email, 
+    Phone, 
+    PasswordHash, 
+    Salt, 
+    FullName, 
+    UserRoleId, 
+    IsActive, 
+    IsApproved, 
+    CreatedAt
+)
+VALUES (
+    'admin', 
+    'admin@consultant.pt', 
+    '910000000', 
+    '$2a$12$HT1K0ZymaztAOvbvySKXbeQpVFaoZZ0RepWZ2QPCj4tbTqzG0CLi6', 
+    'manual_salt', 
+    'Administrador Principal', 
+    8, -- ID 8 (Administrador)
+    1, 
+    1, 
+    GETDATE()
+);
+GO
+
+INSERT INTO Cities (CityName, DistrictName) VALUES
+('Lisboa', 'Lisboa'),
+('Faro', 'Faro'),
+('Porto', 'Porto'),
+('Setubal', 'Setúbal'),
+('Sintra', 'Lisboa');
+GO
+
+INSERT INTO RealEstateType (TypeName) VALUES 
+('Apartamento'),
+('Moradia'),
+('Terreno'),
+('Loja'),
+('Escritório'),
+('Armazém'),
+('Garagem'),
+('Prédio');
+GO
+
+INSERT INTO CategoryType (TypeName) VALUES 
 ('Venda'),
 ('Arrendamento'),
 ('Serviços');
 GO
 
-INSERT INTO Category (CategoryName, CategoryTypeId, ParentCategoryId) 
-VALUES 
+INSERT INTO Category (CategoryName, CategoryTypeId, ParentCategoryId) VALUES 
 ('Apartamentos', 1, NULL),
 ('Moradias', 1, NULL),
 ('Escritórios', 3, NULL);
+GO
 
-INSERT INTO Category (CategoryName, CategoryTypeId, ParentCategoryId) 
-VALUES 
-('T1', 1, 1),
-('T2', 1, 1),
-('Vivenda Geminada', 1, 2);
+DECLARE @VendaTypeId INT = (SELECT CategoryTypeId FROM CategoryType WHERE TypeName = 'Venda');
+DECLARE @ApartamentosId INT = (SELECT CategoriesId FROM Category WHERE CategoryName = 'Apartamentos' AND ParentCategoryId IS NULL);
 
-INSERT INTO UserRoles (RoleName) 
-VALUES ('Administrador');
+INSERT INTO Category (CategoryName, CategoryTypeId, ParentCategoryId) VALUES 
+('T0', @VendaTypeId, @ApartamentosId),
+('T1', @VendaTypeId, @ApartamentosId),
+('T2', @VendaTypeId, @ApartamentosId),
+('T3', @VendaTypeId, @ApartamentosId),
+('T4', @VendaTypeId, @ApartamentosId),
+('T5+', @VendaTypeId, @ApartamentosId);
+GO
 
-INSERT INTO Users (Username, Email, PasswordHash, Salt, FullName, UserRoleId) 
-VALUES 
-('admin', 
- 'admin@consultant.pt', 
- '$2a$12$bAtF/DyUseTdSQ7glhOGveDpbEtab3IJfxeVHy2nD2/y1PLsb07Rm', 
- 'manual_salt', 
- 'Administrador Principal', 
- 1);
 
- SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_NAME = 'Users'
-ORDER BY ORDINAL_POSITION;
-
-SELECT UserId, UserName, Email, IsActive, IsApproved, CreatedAt 
-FROM Users 
+UPDATE Users 
+SET PasswordHash = '$2a$12$HT1K0ZymaztAOvbvySKXbeQpVFaoZZ0RepWZ2QPCj4tbTqzG0CLi6'
 WHERE Email = 'admin@consultant.pt';
-
-SELECT COUNT(*) AS TotalUsers FROM Users;
-
-INSERT INTO Users (UserName, Email, Phone, PasswordHash, Salt, FullName, UserRoleId, IsActive, IsApproved, CreatedAt)
-VALUES (
-    'admin',
-    'admin@consultant.pt',
-    '910000000',
-    '$2a$12$bAtF/DyUseTdSQ7glhOGveDpbEtab3IJfxeVHy2nD2/y1PLsb07Rm',
-    'manual_salt',
-    'Administrador Principal',
-    1,
-    1,
-    1,
-    GETUTCDATE()
-);
-
-SELECT * FROM UserRoles;
-
-INSERT INTO UserRoles (RoleName) VALUES ('Admin');
-
-SELECT * FROM UserRoles;
-
-INSERT INTO Users (UserName, Email, Phone, PasswordHash, Salt, FullName, UserRoleId, IsActive, IsApproved, CreatedAt)
-VALUES (
-    'admin',
-    'admin@consultant.pt',
-    '910000000',
-    '$2a$12$bAtF/DyUseTdSQ7glhOGveDpbEtab3IJfxeVHy2nD2/y1PLsb07Rm',
-    'manual_salt',
-    'Administrador Principal',
-    1,
-    1,
-    1,
-    GETUTCDATE()
-);
-
-SELECT UserId, UserName, Email, IsActive, UserRoleId FROM Users;
+GO

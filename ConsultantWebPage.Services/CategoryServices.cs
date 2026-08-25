@@ -30,6 +30,26 @@ public class CategoryServices : ICategoryServices
         return Result<Category>.Success(repositoryResult.Value);
     }
 
+    // NOVO: expõe o GetCategoryByNameAndAccount do repositório, que já existia
+    // mas nunca tinha sido chamado por nenhum Service/Controller. Necessário
+    // para o frontend conseguir associar a categoria de tipologia (T0-T5+)
+    // correta a um imóvel a partir do nome, sem ter de conhecer o ID de antemão.
+    public async Task<Result<Category>> GetCategoryByNameAsync(string categoryName)
+    {
+        if (string.IsNullOrWhiteSpace(categoryName))
+        {
+            return Error.Validation("O nome da categoria é obrigatório.");
+        }
+
+        var repositoryResult = await _unitOfWork.Categories.GetCategoryByNameAndAccount(categoryName, 0);
+        if (repositoryResult.IsFailure || repositoryResult.Value == null)
+        {
+            return Error.NotFound("CATEGORY_NOT_FOUND", $"Categoria com o nome '{categoryName}' não encontrada.");
+        }
+
+        return Result<Category>.Success(repositoryResult.Value);
+    }
+
     public async Task<Result<IEnumerable<Category>>> GetRootCategoriesAsync()
     {
         var rootCategoriesResult = await _unitOfWork.Categories.GetAllAsync();

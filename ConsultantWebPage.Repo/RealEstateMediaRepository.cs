@@ -54,8 +54,7 @@ public class RealEstateMediaRepository : GenericRepository<RealEstateMedia>, IRe
         }
 
         newMain.UpdateRealEstateMedia(newMain.RealEstateId, newMain.MediaUrl, newMain.MediaType, true);
-
-        await _context.SaveChangesAsync();
+        
         return Result.Success();
     }
 

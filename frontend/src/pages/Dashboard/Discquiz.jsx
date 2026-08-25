@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_BASE_URL as API_BASE } from '../../config/api';
 
 const QUESTIONS = [
     {
@@ -193,6 +194,8 @@ export default function DiscQuiz() {
   const [shuffled] = useState(() => QUESTIONS.map(q => ({ ...q, options: shuffleOptions(q.options) })));
   const [leadForm, setLeadForm] = useState({ name: '', email: '', phone: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
  
   const progress = Math.round((currentQ / QUESTIONS.length) * 100);
  
@@ -212,9 +215,44 @@ export default function DiscQuiz() {
     return Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
   }
  
-  function handleLeadSubmit(e) {
+  async function handleLeadSubmit(e) {
     e.preventDefault();
-    setSubmitted(true);
+    setSubmitError('');
+    setSubmitting(true);
+
+    try {
+      // IMPLEMENTADO: antes só fazia setSubmitted(true) — não gravava nada.
+      // Agora envia o lead para o LeadsController já existente, incluindo o
+      // resultado do perfil DISC na mensagem para o consultor ter contexto
+      // imediato sobre como abordar este lead.
+      const profileKey = calcProfile();
+      const profile = PROFILES[profileKey];
+      const message = `Resultado do teste DISC: Perfil ${profile.label} (${profileKey}). ${profile.tagline}`;
+
+      const res = await fetch(`${API_BASE}/leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          realEstateId: null,
+          consultantId: null,
+          clientName: leadForm.name,
+          email: leadForm.email,
+          phone: leadForm.phone,
+          message,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || 'Não foi possível enviar o seu perfil. Tente novamente.');
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+      setSubmitError(err.message || 'Não foi possível enviar o seu perfil. Tente novamente.');
+    } finally {
+      setSubmitting(false);
+    }
   }
  
   if (step === 'intro') {
@@ -391,17 +429,22 @@ export default function DiscQuiz() {
                     className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-orange-500"
                   />
                   <input
+                    required
                     type="tel"
-                    placeholder="Telefone (opcional)"
+                    placeholder="Telefone"
                     value={leadForm.phone}
                     onChange={e => setLeadForm({ ...leadForm, phone: e.target.value })}
                     className="w-full bg-slate-950 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-orange-500"
                   />
+                  {submitError && (
+                    <p className="text-red-400 text-xs">{submitError}</p>
+                  )}
                   <button
                     type="submit"
-                    className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-xl transition-all"
+                    disabled={submitting}
+                    className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-all"
                   >
-                    Enviar perfil para o Frederico
+                    {submitting ? 'A enviar...' : 'Enviar perfil para o Frederico'}
                   </button>
                 </form>
               </>

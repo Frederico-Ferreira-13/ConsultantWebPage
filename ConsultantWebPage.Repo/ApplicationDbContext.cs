@@ -122,6 +122,12 @@ public class ApplicationDbContext : DbContext
             entity.ToTable("Cities");
             entity.HasKey(c => c.CityId);
             entity.Property(c => c.CityName).IsRequired().HasMaxLength(100);
+            
+            // ✅ ADICIONAR ISTO:
+            entity.Property(c => c.DistrictName)
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasDefaultValue(string.Empty);
         });
 
         modelBuilder.Entity<RealEstateType>(entity =>

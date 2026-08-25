@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useAuth } from '../context/useAuth'; 
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../config/api';
+import { ROLES } from '../config/roles';
  
 export default function Login() {
   const [showRegister, setShowRegister] = useState(false);
@@ -20,7 +22,7 @@ export default function Login() {
 
     try {
       const user = await login(email, password);
-      if (user.usersRoleId === 1) {
+      if (user.usersRoleId === ROLES.ADMIN) {
         navigate('/admin');
       } else {
         navigate('/dashboard/favoritos');
@@ -41,15 +43,19 @@ export default function Login() {
       setError('Preencha todos os campos.');
       return;
     }
-    if (regData.password.length < 6) {
-      setError('A palavra-passe deve ter pelo menos 6 caracteres.');
+    // CORRIGIDO: exigia só 6 caracteres aqui, mas UsersServices.RegisterUserAsync
+    // rejeita passwords com menos de 8 (password.Length < 8). Um utilizador com
+    // password de 6-7 caracteres passava esta validação e só descobria o erro
+    // depois de submeter ao backend — agora está alinhado.
+    if (regData.password.length < 8) {
+      setError('A palavra-passe deve ter pelo menos 8 caracteres.');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5170/api/Users/register', {
+      const response = await fetch(`${API_BASE_URL}/Users/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -57,7 +63,10 @@ export default function Login() {
           email: regData.email,
           password: regData.password,
           userName: regData.email,
-          usersRoleId: 2
+          // Nota: o backend (RegisterUserRequest) ignora este campo — a role é
+          // sempre decidida em UsersServices.RegisterUserAsync com base na
+          // lista de AdminEmails. Mantido aqui só por clareza/consistência.
+          usersRoleId: ROLES.CONSULTANT
         }),
       });
 
@@ -148,12 +157,12 @@ export default function Login() {
             />
             <input
               type="password"
-              placeholder="Palavra-passe (mín. 6 caracteres)"
+              placeholder="Palavra-passe (mín. 8 caracteres)"
               value={regData.password}
               onChange={(e) => setRegData({ ...regData, password: e.target.value })}
               className="w-full bg-white/5 border border-white/10 p-4 rounded-xl outline-none focus:border-orange-500 text-sm transition-colors"
               required
-              minLength={6}
+              minLength={8}
             />
             <button
               type="submit"

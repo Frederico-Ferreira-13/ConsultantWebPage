@@ -1,4 +1,5 @@
 using ConsultantWebPage.Contracts.Interfaces.Services;
+using ConsultantWebPage.Core.Common;
 using ConsultantWebPage.Core.Models;
 using ConsultantWebPage.Core.Models.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
@@ -16,10 +17,7 @@ public class CitiesController : ControllerBase
     {
         _citiesServices = citiesServices;
     }
-
-    // --- MÉTODOS PÚBLICOS (Leitura para o Frontend) ---
-
-    // 1. Listar todas as cidades cadastradas
+    
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -29,8 +27,7 @@ public class CitiesController : ControllerBase
 
         return BadRequest(result.Message);
     }
-
-    // 2. Obter uma cidade específica pelo ID
+    
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -40,8 +37,7 @@ public class CitiesController : ControllerBase
 
         return NotFound(result.Message);
     }
-
-    // 3. Procurar uma cidade pelo nome exacto
+    
     [HttpGet("search")]
     public async Task<IActionResult> GetByName([FromQuery] string name)
     {
@@ -75,7 +71,7 @@ public class CitiesController : ControllerBase
         return BadRequest(result.Message);
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateCityRequest request)
     {
@@ -91,7 +87,7 @@ public class CitiesController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Value!.CityId }, result.Value);
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateCityRequest request)
     {

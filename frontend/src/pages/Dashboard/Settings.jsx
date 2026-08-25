@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../../context/useAuth';
- 
-const API_BASE = 'http://localhost:5170/api';
+import { API_BASE_URL as API_BASE } from '../../config/api';
 
 function Section({ title, description, children }) {
   return (

@@ -10,8 +10,6 @@ public class RealEstateServices : IRealEstateServices
 {
     private readonly IUnitOfWork _unitOfWork;
 
-    // ITokenService removido — não é usado em nenhum método.
-    // Adiciona de volta se precisares de validar tokens aqui.
     public RealEstateServices(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
@@ -30,7 +28,7 @@ public class RealEstateServices : IRealEstateServices
                 Error.NotFound(ErrorCodes.NotFound, $"Imóvel com ID {id} não encontrado."));
 
         var property = result.Value!;
-        
+
         if (!property.GetIsActive() && property.ConsultantId != currentUserId)
             return Result<RealEstate>.Failure(
                 Error.Forbidden(ErrorCodes.AuthForbidden, "Não tem permissão para ver este imóvel."));
@@ -78,6 +76,14 @@ public class RealEstateServices : IRealEstateServices
             return Result<RealEstate>.Failure(
                 Error.NotFound(ErrorCodes.NotFound, $"Consultor com ID {consultantId} não encontrado."));
 
+        var typeExists = await _unitOfWork.RealEstatesTypes.ExistsAsync(property.RealEstateTypeId);
+        if (!typeExists)
+        {
+            return Result<RealEstate>.Failure(
+                Error.Validation("Tipo de imóvel inválido.", 
+                new Dictionary<string, string[]> { { nameof(property.RealEstateTypeId), new[] { "O tipo de imóvel selecionado não existe." } } }));
+        }
+
         await _unitOfWork.BeginTransactionAsync();
 
         try
@@ -115,7 +121,7 @@ public class RealEstateServices : IRealEstateServices
 
         var property = result.Value!;
         var newStatus = isActive ? "Available" : "Inactive";
-        
+
         if (property.Status == newStatus)
             return Result.Success("Estado já está atualizado.");
 
@@ -176,7 +182,7 @@ public class RealEstateServices : IRealEstateServices
             return Result.Failure(
                 Error.NotFound(ErrorCodes.NotFound, $"Imóvel com ID {propertyId} não encontrado."));
 
-        
+
         var hasRecent = await _unitOfWork.Leads.HasRecentLeadFromEmailAsync(clientEmail, propertyId);
         if (hasRecent)
             return Result.Failure(
@@ -253,11 +259,11 @@ public class RealEstateServices : IRealEstateServices
 
         try
         {
-            string userEmail = user.GetType().GetProperty("Email")?.GetValue(user)?.ToString() ?? "sem@email.com";
-            string userPhone = user.GetType().GetProperty("PhoneNumber")?.GetValue(user)?.ToString() ?? "900000000";
-            string userName = user.GetType().GetProperty("Name")?.GetValue(user)?.ToString() ?? "Cliente Registado";
-
-            var contactResult = ContactInfo.Create(userEmail, userPhone);
+            // CORRIGIDO: antes usava reflection (GetProperty("Email")/("PhoneNumber")/("Name"))
+            // que nunca encontrava nada porque estes dados vivem no Value Object Contact
+            // e a propriedade chama-se FullName, não Name. Resultado: caía sempre no
+            // fallback "sem@email.com". Agora lê diretamente da entidade.
+            var contactResult = ContactInfo.Create(user.Contact.Email, user.Contact.PhoneNumber);
             if (contactResult.IsFailure)
             {
                 _unitOfWork.Rollback();
@@ -266,7 +272,7 @@ public class RealEstateServices : IRealEstateServices
 
             string message = $"Pedido de visita agendado para a data: {preferredDate.ToLocalTime():dd/MM/yyyy HH:mm}";
 
-            var leadResult = Leads.Create(propertyId, null, userName, contactResult.Value!, message);
+            var leadResult = Leads.Create(propertyId, null, user.FullName, contactResult.Value!, message);
             if (leadResult.IsFailure)
             {
                 _unitOfWork.Rollback();
@@ -375,24 +381,20 @@ public class RealEstateServices : IRealEstateServices
 
     public async Task<Result<IEnumerable<RealEstate>>> SearchPropertiesAsync(string city, decimal? maxPrice, int? rooms)
     {
-        // O repositório usa searchTerm para pesquisa genérica — passamos a cidade
+        // IMPLEMENTADO: rooms deixou de ser ignorado — é agora aplicado no
+        // repositório via associação à categoria de tipologia correspondente
+        // (T0, T1, T2...). Ver RealEstateRepository.SearchAsync.
         var (items, _) = await _unitOfWork.RealEstates.SearchAsync(
             searchTerm: city,
             categoryId: null,
             minPrice: null,
             maxPrice: maxPrice,
+            rooms: rooms,
             page: 1,
             pageSize: 100
         );
 
-        // Filtrar por número de quartos se fornecido — feito em memória porque
-        // o repositório não suporta filtro por quartos nativamente.
-        // Considera adicionar 'rooms' ao SearchAsync do repositório no futuro.
-        var filtered = rooms.HasValue
-            ? items // substitui por: items.Where(p => p.Rooms == rooms.Value) quando o modelo tiver Rooms
-            : items;
-
-        return Result<IEnumerable<RealEstate>>.Success(filtered);
+        return Result<IEnumerable<RealEstate>>.Success(items);
     }
 
     // -------------------------------------------------------------------------

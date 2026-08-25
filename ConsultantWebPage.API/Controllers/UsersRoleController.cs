@@ -1,4 +1,5 @@
 using ConsultantWebPage.Contracts.Interfaces.Services;
+using ConsultantWebPage.Core.Common;
 using ConsultantWebPage.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -7,7 +8,7 @@ namespace ConsultantWebPage.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize] // Gestão de roles é sempre restrita
+[Authorize(Roles = AppRoles.Admin)]
 public class UsersRoleController : ControllerBase
 {
     private readonly IUsersServices _usersService;
@@ -16,9 +17,7 @@ public class UsersRoleController : ControllerBase
     {
         _usersService = usersService;
     }
-
-    // GET api/usersrole
-    // Lista todas as roles → GET sem parâmetros
+   
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -28,9 +27,7 @@ public class UsersRoleController : ControllerBase
 
         return BadRequest(result.Message);
     }
-
-    // GET api/usersrole/{id}
-    // Detalhes de uma role → GET + id na rota
+    
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -40,9 +37,7 @@ public class UsersRoleController : ControllerBase
 
         return NotFound(result.Message);
     }
-
-    // GET api/usersrole/name/{name}
-    // Busca por nome → GET com sub-rota descritiva
+    
     [HttpGet("name/{name}")]
     public async Task<IActionResult> GetByName(string name)
     {
@@ -55,9 +50,7 @@ public class UsersRoleController : ControllerBase
 
         return NotFound(result.Message);
     }
-
-    // POST api/usersrole
-    // Criação de nova role → POST com body
+    
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] UsersRoleRequest request)
     {
@@ -77,9 +70,7 @@ public class UsersRoleController : ControllerBase
 
         return CreatedAtAction(nameof(GetById), new { id = result.Value!.UsersRoleId }, result.Value);
     }
-
-    // PUT api/usersrole/{id}
-    // Atualização completa → PUT porque só há um campo editável (RoleName)
+    
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UsersRoleRequest request)
     {
@@ -104,9 +95,7 @@ public class UsersRoleController : ControllerBase
 
         return Ok(role);
     }
-
-    // DELETE api/usersrole/{id}
-    // Eliminação → DELETE + id na rota
+    
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
@@ -114,7 +103,7 @@ public class UsersRoleController : ControllerBase
         if (!result.IsSuccessful)
             return NotFound(result.Message);
 
-        return NoContent(); // 204 — eliminado com sucesso
+        return NoContent();
     }
 }
 

@@ -1,4 +1,5 @@
 using ConsultantWebPage.Contracts.Interfaces.Services;
+using ConsultantWebPage.Core.Common;
 using ConsultantWebPage.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -15,10 +16,7 @@ public class TestimonialsController : ControllerBase
     {
         _testimonialsService = testimonialsService;
     }
-
-    // GET api/testimonials/consultant/{consultantId}
-    // Lista testemunhos aprovados e visíveis → GET público, sem autenticação
-    // Um visitante pode ver os testemunhos de um consultor sem ter conta
+   
     [HttpGet("consultant/{consultantId:int}")]
     public async Task<IActionResult> GetApproved(int consultantId)
     {
@@ -28,12 +26,8 @@ public class TestimonialsController : ControllerBase
 
         return BadRequest(result.Message);
     }
-
-    // GET api/testimonials/consultant/{consultantId}/moderation
-    // Lista TODOS os testemunhos para moderação → GET com sub-rota descritiva
-    // "moderation" deixa claro que esta rota devolve também os não visíveis
-    // Requer autenticação — só o consultor ou admin deve ver os pendentes
-    [Authorize]
+    
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpGet("consultant/{consultantId:int}/moderation")]
     public async Task<IActionResult> GetAllForModeration(int consultantId)
     {
@@ -43,10 +37,7 @@ public class TestimonialsController : ControllerBase
 
         return BadRequest(result.Message);
     }
-
-    // POST api/testimonials
-    // Submissão de novo testemunho → POST sem autenticação
-    // Um cliente anónimo pode submeter um testemunho — fica invisível até ser aprovado
+    
     [HttpPost]
     public async Task<IActionResult> Submit([FromBody] SubmitTestimonialRequest request)
     {
@@ -74,11 +65,8 @@ public class TestimonialsController : ControllerBase
         // Comunica ao cliente que o testemunho está pendente de aprovação
         return Accepted(new { message = "Testemunho submetido com sucesso. Ficará visível após aprovação." });
     }
-
-    // PATCH api/testimonials/{id}/visibility
-    // Altera a visibilidade → PATCH porque só um campo muda (IsVisible)
-    // É a ação de aprovação/rejeição pelo consultor ou admin
-    [Authorize]
+    
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPatch("{id:int}/visibility")]
     public async Task<IActionResult> UpdateVisibility(int id, [FromBody] TestimonialVisibilityRequest request)
     {
@@ -86,12 +74,10 @@ public class TestimonialsController : ControllerBase
         if (!result.IsSuccessful)
             return NotFound(result.Message);
 
-        return NoContent(); // 204 — alteração bem sucedida sem necessidade de devolver o recurso
+        return NoContent();
     }
-
-    // DELETE api/testimonials/{id}
-    // Eliminação → DELETE + id na rota, retorna 204
-    [Authorize]
+    
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
@@ -99,7 +85,7 @@ public class TestimonialsController : ControllerBase
         if (!result.IsSuccessful)
             return NotFound(result.Message);
 
-        return NoContent(); // 204 — eliminado com sucesso, sem body
+        return NoContent();
     }
 }
 

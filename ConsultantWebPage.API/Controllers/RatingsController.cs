@@ -11,10 +11,12 @@ namespace ConsultantWebPage.API.Controllers;
 public class RatingsController : ControllerBase
 {
     private readonly IRatingsServices _ratingsService;
+    private readonly IUsersServices _usersService;
 
-    public RatingsController(IRatingsServices ratingsServices)
+    public RatingsController(IRatingsServices ratingsServices, IUsersServices usersService)
     {
         _ratingsService = ratingsServices;
+        _usersService = usersService;
     }
 
     [HttpGet("{id:int}")]
@@ -67,11 +69,11 @@ public class RatingsController : ControllerBase
         return BadRequest(result.Message);
     }
 
-     [Authorize]
+    // O UserId nunca vem do body — evita que um utilizador avalie "em nome" de outro.
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> AddOrUpdate([FromBody] AddRatingRequest request)
     {
-        // StarRating valida o range 1-5 — apanhamos a exceção e devolvemos 400
         try
         {
             StarRating.Create(request.Stars);
@@ -81,8 +83,12 @@ public class RatingsController : ControllerBase
             return BadRequest(ex.Message);
         }
 
+        var currentUserIdResult = await _usersService.GetCurrentUserIdAsync();
+        if (!currentUserIdResult.IsSuccessful)
+            return Unauthorized("Não foi possível identificar o utilizador.");
+
         var result = await _ratingsService.AddOrUpdateRatingAsync(
-            request.UserId,
+            currentUserIdResult.Value,
             request.RealEstateId,
             request.Stars
         );
@@ -105,8 +111,8 @@ public class RatingsController : ControllerBase
         return NoContent(); // 204 — eliminado com sucesso, sem body
     }
 
+    // UserId removido — agora vem sempre do token autenticado.
     public record AddRatingRequest(
-        int UserId,
         int RealEstateId,
         int Stars
     );

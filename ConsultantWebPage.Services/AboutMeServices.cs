@@ -28,30 +28,36 @@ public class AboutMeServices : IAboutMeServices
         }
 
         return Result<AboutMe>.Success(repositoryResult.Value);
-    }    
+    }  
+
     public async Task<Result<AboutMe>> SaveAboutMeAsync(int userId, AboutMe aboutMe)
     {
         var hasProfileResult = await _unitOfWork.AboutMe.GetAllByUserIdAsync(userId);
+        bool hasProfile = hasProfileResult.IsSuccessful && hasProfileResult.Value != null && hasProfileResult.Value.Any();
 
-        if (hasProfileResult.IsSuccessful && hasProfileResult.Value != null && hasProfileResult.Value.Any())
-        {
-            return await UpdateAboutMeAsync(aboutMe);
-        }
-        else
-        {
-            return await CreateAboutMeAsync(aboutMe);
-        }
+         return hasProfile
+            ? await UpdateAboutMeAsync(aboutMe)
+            : await CreateAboutMeInternalAsync(aboutMe, checkForExistingProfile: false);
     }
+
     public async Task<Result<AboutMe>> CreateAboutMeAsync(AboutMe aboutMe)
     {
-        var existingProfileResult = await _unitOfWork.AboutMe.GetAllByUserIdAsync(aboutMe.UserId);
-        if (existingProfileResult.IsSuccessful && existingProfileResult.Value != null && existingProfileResult.Value.Any())
-        {
-            return Error.Conflict("PROFILE_ALREADY_EXISTS", "Este utilizador já possui um perfil 'Sobre Mim' configurado.");
-        }
+        return await CreateAboutMeInternalAsync(aboutMe, checkForExistingProfile: true);
+    }
 
-        var userExists = await _unitOfWork.Users.GetByIdAsync(aboutMe.UserId); // Assumindo que o teu repositório de Users tem GetByIdAsync
-        if (userExists == null)
+    private async Task<Result<AboutMe>> CreateAboutMeInternalAsync(AboutMe aboutMe, bool checkForExistingProfile)
+    {
+        if (checkForExistingProfile)
+        {
+            var existingProfileResult = await _unitOfWork.AboutMe.GetAllByUserIdAsync(aboutMe.UserId);
+            if (existingProfileResult.IsSuccessful && existingProfileResult.Value != null && existingProfileResult.Value.Any())
+            {
+                return Error.Conflict("PROFILE_ALREADY_EXISTS", "Este utilizador já possui um perfil 'Sobre Mim' configurado.");
+            }
+        }
+        
+        var userExists = await _unitOfWork.Users.GetByIdAsync(aboutMe.UserId);
+        if (!userExists.IsSuccessful)
         {
             return Error.NotFound("USER_NOT_FOUND", "Não é possível criar um perfil para um utilizador inexistente.");
         }
@@ -65,6 +71,7 @@ public class AboutMeServices : IAboutMeServices
         await _unitOfWork.CommitAsync();
         return Result<AboutMe>.Success(aboutMe, "Perfil criado com sucesso.");
     }
+
 
     public async Task<Result<AboutMe>> UpdateAboutMeAsync(AboutMe aboutMe)
     {

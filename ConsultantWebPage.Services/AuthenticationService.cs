@@ -42,12 +42,20 @@ public class AuthenticationService : IAuthenticationService
 
         var user = userResult.Value;
 
-        if (!_passwordHasher.VerifyPassword(user.PasswordHash, password, user.Salt))
+        if (!_passwordHasher.VerifyPassword(user.PasswordHash, password))
         {
             return Result<Users>.Failure(
                 Error.Unauthorized(
                     ErrorCodes.AuthFailed,
                     "Credenciais inválidas."));
+        }
+
+        if (!user.IsApproved)
+        {
+            return Result<Users>.Failure(
+                Error.Forbidden(
+                    ErrorCodes.AuthForbidden,
+                    "A sua conta ainda está pendente de aprovação por um administrador."));
         }
 
         return Result<Users>.Success(user);

@@ -23,7 +23,7 @@ const NAV_GROUPS = [
     label: 'Conteúdo',
     items: [
       {
-        to: '/admin/imoveis',
+        to: '/admin/gestaoimoveis',
         icon: (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"

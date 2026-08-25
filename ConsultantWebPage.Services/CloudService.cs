@@ -87,4 +87,47 @@ public class CloudService : ICloudService
             return _defaultImageUrl;
         }
     }
+
+    public async Task<string> UploadVideoAsync(IFormFile? videoFile)
+    {
+        if (videoFile == null || videoFile.Length == 0)
+        {
+            return string.Empty;
+        }
+
+        try
+        {
+            await using var stream = videoFile.OpenReadStream();
+
+            var uploadParams = new VideoUploadParams()
+            {
+                File = new FileDescription(videoFile.FileName, stream),
+                UseFilename = true,
+                UniqueFilename = true,
+                Overwrite = false
+            };
+
+            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+
+            if (uploadResult.StatusCode == System.Net.HttpStatusCode.OK)
+            {
+                return uploadResult.SecureUrl?.ToString() ?? string.Empty;
+            }
+
+            _logger?.LogWarning(
+                "Falha no upload de vídeo para Cloudinary. Status: {StatusCode}, Erro: {ErrorMessage}",
+                uploadResult.StatusCode,
+                uploadResult.Error?.Message);
+
+            return string.Empty;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                "Erro ao fazer upload do vídeo {FileName}. Tamanho: {Length} bytes",
+                videoFile?.FileName, videoFile?.Length);
+
+            return string.Empty;
+        }
+    }
 }

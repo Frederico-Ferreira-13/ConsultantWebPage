@@ -13,18 +13,18 @@ public class RatingsRepository : GenericRepository<Ratings>, IRatingsRepository
 {
     public RatingsRepository(ApplicationDbContext context) : base(context)
     {
-    }   
+    }
 
     public async Task<Result<Ratings>> GetByUserAndRealEstateAsync(int userId, int realEstateId)
     {
         var rating = await _dbSet
             .Where(r => r.UserId == userId && r.RealEstateId == realEstateId)
-            .FirstOrDefaultAsync<Ratings>();        
+            .FirstOrDefaultAsync<Ratings>();
 
         if (rating == null) return Result<Ratings>.Failure(Error.NotFound("Avaliação não encontrada."));
 
         return Result<Ratings>.Success(rating);
-        
+
     }
 
     public async Task<Result<IEnumerable<Ratings>>> GetByRealEstateIdAsync(int realEstateId)
@@ -44,7 +44,19 @@ public class RatingsRepository : GenericRepository<Ratings>, IRatingsRepository
 
         return Result<double>.Success(averageRating);
     }
-    
+
+    // NOVO: antes, o serviço chamava GetAverageRatingAsync(consultantId) por engano,
+    // o que filtrava por RealEstateId == consultantId (quase sempre 0 resultados,
+    // ou pior, misturado com um imóvel de ID coincidente). Esta versão faz join
+    // correto via navegação RealEstate -> ConsultantId.
+    public async Task<Result<double>> GetAverageRatingForConsultantAsync(int consultantId)
+    {
+        var averageRating = await _dbSet
+            .Where(r => r.RealEstate != null && r.RealEstate.ConsultantId == consultantId)
+            .AverageAsync(r => (double?)r.RatingValue!.Value) ?? 0;
+
+        return Result<double>.Success(averageRating);
+    }
 
     public async Task<bool> HasUserRatedAsync(int userId, int realEstateId)
     {
@@ -69,8 +81,7 @@ public class RatingsRepository : GenericRepository<Ratings>, IRatingsRepository
             var newRating = new Ratings(realEstateId, userId, stars);
             await _dbSet.AddAsync(newRating);
         }
-
-        await _context.SaveChangesAsync();
+        
         return Result.Success();
     }
 }

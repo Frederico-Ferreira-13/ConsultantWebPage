@@ -35,6 +35,9 @@ namespace ConsultantWebPage.Core.Models
 
         [MaxLength(100)]
         public string Condition { get; protected set; } = string.Empty;
+        
+        [MaxLength(255)]
+        public string? VisitPreference { get; protected set; }
 
         [MaxLength(50)]
         public string Status { get; protected set; } = string.Empty;
@@ -50,7 +53,7 @@ namespace ConsultantWebPage.Core.Models
         private PropertyEvaluations() { }
 
         public PropertyEvaluations(int consultantId, string clientName, string clientContact, string propertyType,
-            string address, string typology, decimal area, string condition, int? userId = null)
+            string address, string typology, decimal area, string condition, int? userId = null, string? visitPreference = null)
         {
             ValidateEvaluation(consultantId, clientName, clientContact, area, userId);
 
@@ -63,6 +66,7 @@ namespace ConsultantWebPage.Core.Models
             Typology = typology;
             Area = area;
             Condition = condition;
+            VisitPreference = visitPreference;
             Status = "Pending";
             CreatedAt = DateTime.UtcNow;
         }
@@ -71,8 +75,7 @@ namespace ConsultantWebPage.Core.Models
         {
             if (consultantId <= 0)
                 throw new ArgumentException("Consultant ID must be a positive integer.");
-            
-            // Se não for um utilizador registado, o nome e contacto são obrigatórios
+
             if (!userId.HasValue && string.IsNullOrWhiteSpace(clientName))
                 throw new ArgumentException("Client name is required for guest evaluations.");
 

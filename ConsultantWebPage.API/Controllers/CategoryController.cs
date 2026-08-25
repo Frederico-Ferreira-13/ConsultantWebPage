@@ -1,4 +1,5 @@
 using ConsultantWebPage.Contracts.Interfaces.Services;
+using ConsultantWebPage.Core.Common;
 using ConsultantWebPage.Core.Models;
 using ConsultantWebPage.Core.Models.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
@@ -36,6 +37,16 @@ public class CategoryController : ControllerBase
 
         return NotFound(result.Message);
     }
+
+    [HttpGet("by-name/{name}")]
+    public async Task<IActionResult> GetByName(string name)
+    {
+        var result = await _categoryServices.GetCategoryByNameAsync(name);
+        if (result.IsSuccessful)
+            return Ok(result.Value);
+
+        return NotFound(result.Message);
+    }
    
     [HttpGet("{id:int}/with-subs")]
     public async Task<IActionResult> GetCategoryWithSubs(int id)
@@ -47,7 +58,7 @@ public class CategoryController : ControllerBase
         return NotFound(result.Message);
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateCategoryRequest request)
     {
@@ -65,7 +76,7 @@ public class CategoryController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Value!.CategoriesId }, result.Value);
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateCategoryRequest request)
     {
@@ -90,7 +101,7 @@ public class CategoryController : ControllerBase
         return Ok(result.Value);
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {

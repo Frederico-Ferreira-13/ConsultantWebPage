@@ -1,4 +1,5 @@
 using ConsultantWebPage.Contracts.Interfaces.Services;
+using ConsultantWebPage.Core.Common;
 using ConsultantWebPage.Core.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
@@ -16,8 +17,6 @@ public class RealEstateMediaController : ControllerBase
         _realEstateService = realEstateService;
     }
 
-    // GET api/realestatema/property/{realEstateId}
-    // Lista todos os media de um imóvel → GET com sub-rota de contexto
     [HttpGet("property/{realEstateId:int}")]
     public async Task<IActionResult> GetByProperty(int realEstateId)
     {
@@ -27,10 +26,7 @@ public class RealEstateMediaController : ControllerBase
 
         return BadRequest(result.Message);
     }
-
-    // GET api/realestatema/property/{realEstateId}/main
-    // Imagem principal de um imóvel → GET com sub-rota descritiva
-    // Separado do anterior porque devolve um único item em vez de uma lista
+    
     [HttpGet("property/{realEstateId:int}/main")]
     public async Task<IActionResult> GetMainImage(int realEstateId)
     {
@@ -40,10 +36,8 @@ public class RealEstateMediaController : ControllerBase
 
         return NotFound(result.Message);
     }
-
-    // POST api/realestatema
-    // Adiciona um único media → POST com body
-    [Authorize]
+  
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPost]
     public async Task<IActionResult> AddMedia([FromBody] AddMediaRequest request)
     {
@@ -68,12 +62,8 @@ public class RealEstateMediaController : ControllerBase
 
         return StatusCode(201, result.Value);
     }
-
-    // POST api/realestatema/batch
-    // Adiciona múltiplos media de uma vez → POST com sub-rota "batch"
-    // É um POST separado e não o mesmo endpoint porque o serviço e o body são diferentes
-    // "batch" é a convenção para operações em massa
-    [Authorize]
+   
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPost("batch")]
     public async Task<IActionResult> AddMultipleMedia([FromBody] AddMultipleMediaRequest request)
     {
@@ -106,11 +96,8 @@ public class RealEstateMediaController : ControllerBase
 
         return StatusCode(201, result.Value);
     }
-
-    // PATCH api/realestatema/{mediaId}/main
-    // Define a imagem principal → PATCH porque só altera o campo IsMain
-    // Requer também o realEstateId no body para o serviço poder limpar o IsMain anterior
-    [Authorize]
+    
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPatch("{mediaId:int}/main")]
     public async Task<IActionResult> SetMainImage(int mediaId, [FromBody] SetMainImageRequest request)
     {
@@ -118,13 +105,10 @@ public class RealEstateMediaController : ControllerBase
         if (!result.IsSuccessful)
             return NotFound(result.Message);
 
-        return NoContent(); // 204 — alteração bem sucedida
+        return NoContent();
     }
-
-    // PATCH api/realestatema/order
-    // Reordena os media → PATCH porque é uma atualização parcial (só a ordem muda)
-    // Não é PUT porque não estás a substituir os recursos, só a mudar a sua sequência
-    [Authorize]
+    
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPatch("order")]
     public async Task<IActionResult> UpdateOrder([FromBody] UpdateMediaOrderRequest request)
     {
@@ -135,12 +119,10 @@ public class RealEstateMediaController : ControllerBase
         if (!result.IsSuccessful)
             return BadRequest(result.Message);
 
-        return NoContent(); // 204 — reordenação bem sucedida
+        return NoContent();
     }
-
-    // DELETE api/realestatema/{mediaId}
-    // Elimina um media → DELETE + id na rota, retorna 204
-    [Authorize]
+    
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpDelete("{mediaId:int}")]
     public async Task<IActionResult> Delete(int mediaId)
     {
@@ -148,11 +130,10 @@ public class RealEstateMediaController : ControllerBase
         if (!result.IsSuccessful)
             return NotFound(result.Message);
 
-        return NoContent(); // 204 — eliminado com sucesso, sem body
+        return NoContent();
     }
 }
 
-// Records de request
 public record AddMediaRequest(
     int RealEstateId,
     string MediaUrl,

@@ -20,6 +20,7 @@ public class RealEstateRepository : GenericRepository<RealEstate>, IRealEstateRe
         int? categoryId, 
         decimal? minPrice, 
         decimal? maxPrice,
+        int? rooms,
         int page, 
         int pageSize)
     {
@@ -36,6 +37,13 @@ public class RealEstateRepository : GenericRepository<RealEstate>, IRealEstateRe
 
         if (maxPrice.HasValue)
             query = query.Where(re => re.Price.Amount <= maxPrice.Value);
+
+        if (rooms.HasValue)
+        {
+            var typologyName = $"T{rooms.Value}";
+            query = query.Where(re => re.RealEstateCategories
+                .Any(rec => rec.Category != null && rec.Category.CategoryName == typologyName));
+        }
 
         var totalCount = await query.CountAsync();
 

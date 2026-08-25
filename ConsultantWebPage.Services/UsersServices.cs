@@ -116,12 +116,11 @@ public class UsersServices : IUsersServices
         {
             bool isAdminEmail = _adminEmails.Contains(normalizedEmail);
 
-            // Criar utilizador via factory method
             var userResult = Users.Create(
                 name: name,
                 userName: userName,
-                contact: contactInfoResult.Value,
-                usersRoleId: isAdminEmail ? 1 : 2,
+                contact: contactInfoResult.Value!,
+                usersRoleId: isAdminEmail ? AppRoles.AdminId : AppRoles.ConsultantId,
                 isApproved: isAdminEmail
             );
 
@@ -129,7 +128,7 @@ public class UsersServices : IUsersServices
                 return Result<Users>.Failure(userResult.Error);
 
             var user = userResult.Value;
-            user.SetPassword(hashResult.Value.Hash, salt);
+            user!.SetPassword(hashResult.Value.Hash, salt);
 
             var addResult = await _unitOfWork.Users.AddAsync(user);
             if (!addResult.IsSuccessful)
@@ -164,10 +163,6 @@ public class UsersServices : IUsersServices
         }
     }
 
-    // -------------------------------------------------------------------------
-    // AUTENTICAÇÃO
-    // -------------------------------------------------------------------------
-
     public async Task<Result<Users>> AuthenticateUserAsync(string identifier, string password)
     {
         var authResult = await _authenticationService.AuthenticateAsync(identifier, password);
@@ -175,7 +170,7 @@ public class UsersServices : IUsersServices
             return Result<Users>.Failure(authResult.Error);
 
         var userResult = await _unitOfWork.Users.GetByIdAsync(authResult.Value!.UserId);
-        if (!userResult.IsSuccessful || !userResult.Value.IsActive)
+        if (!userResult.IsSuccessful || !userResult.Value!.IsActive)
         {
             return Result<Users>.Failure(
                 Error.Unauthorized(ErrorCodes.AuthUnauthorized, "Conta inativa ou não encontrada.")
@@ -205,7 +200,7 @@ public class UsersServices : IUsersServices
             );
         }
 
-        return Result<Users>.Success(result.Value);
+        return Result<Users>.Success(result.Value!);
     }
 
     public async Task<Result<Users>> GetUserByEmailAsync(string email)
@@ -229,7 +224,7 @@ public class UsersServices : IUsersServices
             );
         }
 
-        return Result<Users>.Success(result.Value);
+        return Result<Users>.Success(result.Value!);
     }
 
     public async Task<Result<Users>> GetUserByUsernameOrEmailAsync(string identifier)
@@ -248,11 +243,11 @@ public class UsersServices : IUsersServices
 
         var byEmail = await _unitOfWork.Users.GetByEmailAsync(normalized);
         if (byEmail.IsSuccessful)
-            return Result<Users>.Success(byEmail.Value);
+            return Result<Users>.Success(byEmail.Value!);
 
         var byUserName = await _unitOfWork.Users.GetByUserNameAsync(normalized);
         if (byUserName.IsSuccessful)
-            return Result<Users>.Success(byUserName.Value);
+            return Result<Users>.Success(byUserName.Value!);
 
         return Result<Users>.Failure(
             Error.NotFound(ErrorCodes.NotFound, $"Utilizador com identificador '{identifier}' não encontrado.")
@@ -322,7 +317,7 @@ public class UsersServices : IUsersServices
         }
 
         // Verificar username duplicado
-        if (!string.IsNullOrWhiteSpace(userToUpdate.UserName) && userToUpdate.UserName != existingUser.UserName)
+        if (!string.IsNullOrWhiteSpace(userToUpdate.UserName) && userToUpdate.UserName != existingUser!.UserName)
         {
             var existingUserName = await _unitOfWork.Users.GetByUserNameAsync(userToUpdate.UserName);
             if (existingUserName.IsSuccessful)
@@ -340,7 +335,7 @@ public class UsersServices : IUsersServices
         // Verificar email duplicado
         if (userToUpdate.Contact != null &&
             !string.IsNullOrWhiteSpace(userToUpdate.Contact.Email) &&
-            userToUpdate.Contact.Email != existingUser.Contact?.Email)
+            userToUpdate.Contact.Email != existingUser!.Contact?.Email)
         {
             var normalizedEmail = userToUpdate.Contact.Email.Trim().ToLowerInvariant();
             var existingEmail = await _unitOfWork.Users.GetByEmailAsync(normalizedEmail);
@@ -362,17 +357,17 @@ public class UsersServices : IUsersServices
         {
             if (!string.IsNullOrWhiteSpace(userToUpdate.ProfilePicture))
             {
-                existingUser.UpdateProfilePicture(userToUpdate.ProfilePicture);
+                existingUser!.UpdateProfilePicture(userToUpdate.ProfilePicture);
             }
 
             if (!string.IsNullOrWhiteSpace(userToUpdate.UserName))
             {
-                existingUser.UpdateUserName(userToUpdate.UserName);
+                existingUser!.UpdateUserName(userToUpdate.UserName);
             }
 
             if (userToUpdate.Contact != null)
             {
-                var updateContactResult = existingUser.UpdateContact(userToUpdate.Contact);
+                var updateContactResult = existingUser!.UpdateContact(userToUpdate.Contact);
                 if (!updateContactResult.IsSuccessful)
                 {
                     _unitOfWork.Rollback();
@@ -380,7 +375,7 @@ public class UsersServices : IUsersServices
                 }
             }
 
-            await _unitOfWork.Users.UpdateAsync(existingUser);
+            await _unitOfWork.Users.UpdateAsync(existingUser!);
             await _unitOfWork.CommitAsync();
 
             return Result.Success("Perfil atualizado com sucesso.");
@@ -417,7 +412,7 @@ public class UsersServices : IUsersServices
         }
 
         var userResult = await _unitOfWork.Users.GetByIdAsync(userId);
-        if (!userResult.IsSuccessful || !userResult.Value.IsActive)
+        if (!userResult.IsSuccessful || !userResult.Value!.IsActive)
         {
             return Result.Failure(
                 Error.NotFound(ErrorCodes.NotFound, "Utilizador não encontrado ou inativo.")
@@ -434,7 +429,7 @@ public class UsersServices : IUsersServices
             );
         }
 
-        if (!_passwordHasher.VerifyPassword(user.PasswordHash, oldPassword, user.Salt))
+        if (!_passwordHasher.VerifyPassword(user.PasswordHash, oldPassword))
         {
             return Result.Failure(Error.Validation("Password antiga incorreta."));
         }
@@ -467,11 +462,24 @@ public class UsersServices : IUsersServices
     public async Task<Result> DeactivateUserAsync(int userId)
     {
         var currentUserIdResult = await GetCurrentUserIdAsync();
-        if (!currentUserIdResult.IsSuccessful || currentUserIdResult.Value != userId)
+        if (!currentUserIdResult.IsSuccessful)
         {
-            return Result.Failure(
-                Error.Forbidden(ErrorCodes.AuthForbidden, "Apenas o próprio utilizador pode desativar a sua conta.")
-            );
+            return Result.Failure(Error.Unauthorized(ErrorCodes.AuthUnauthorized, "Não autenticado."));
+        }
+
+        // CORRIGIDO: só permitia auto-desativação. Um Admin não conseguia
+        // desativar a conta de outro utilizador (ex: um cliente problemático),
+        // ao contrário de ActivateUserAsync, que já tinha esta simetria.
+        var isSelf = currentUserIdResult.Value == userId;
+        if (!isSelf)
+        {
+            var currentUserResult = await _unitOfWork.Users.GetByIdAsync(currentUserIdResult.Value);
+            if (!currentUserResult.IsSuccessful || currentUserResult.Value!.UsersRoleId != AppRoles.AdminId)
+            {
+                return Result.Failure(
+                    Error.Forbidden(ErrorCodes.AuthForbidden, "Apenas o próprio utilizador ou um administrador podem desativar esta conta.")
+                );
+            }
         }
 
         var userResult = await _unitOfWork.Users.GetByIdAsync(userId);
@@ -484,7 +492,7 @@ public class UsersServices : IUsersServices
 
         try
         {
-            user.Deactivate();
+            user!.Deactivate();
             await _unitOfWork.Users.UpdateAsync(user);
             await _unitOfWork.CommitAsync();
 
@@ -504,7 +512,7 @@ public class UsersServices : IUsersServices
             return Result.Failure(Error.Unauthorized(ErrorCodes.AuthUnauthorized, "Não autenticado."));
 
         var currentUserResult = await _unitOfWork.Users.GetByIdAsync(currentUserIdResult.Value);
-        if (!currentUserResult.IsSuccessful || currentUserResult.Value.UsersRoleId != 1)
+        if (!currentUserResult.IsSuccessful || currentUserResult.Value!.UsersRoleId != AppRoles.AdminId)
         {
             return Result.Failure(
                 Error.Forbidden(ErrorCodes.AuthForbidden, "Apenas administradores podem ativar contas.")
@@ -521,7 +529,7 @@ public class UsersServices : IUsersServices
 
         try
         {
-            user.Activate();
+            user!.Activate();
             await _unitOfWork.Users.UpdateAsync(user);
             await _unitOfWork.CommitAsync();
 
@@ -542,7 +550,7 @@ public class UsersServices : IUsersServices
 
         var currentUserResult = await _unitOfWork.Users.GetByIdAsync(currentUserIdResult.Value);
         if (!currentUserResult.IsSuccessful ||
-            (currentUserIdResult.Value != userId && currentUserResult.Value.UsersRoleId != 1))
+            (currentUserIdResult.Value != userId && currentUserResult.Value!.UsersRoleId != AppRoles.AdminId))
         {
             return Result.Failure(
                 Error.Forbidden(ErrorCodes.AuthForbidden, "Apenas o próprio utilizador ou administradores podem eliminar contas.")
@@ -567,11 +575,7 @@ public class UsersServices : IUsersServices
             _unitOfWork.Rollback();
             return Result.Failure(Error.InternalServer($"Erro ao eliminar utilizador: {ex.Message}"));
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // SETTINGS
-    // -------------------------------------------------------------------------
+    } 
 
     public async Task<Result<UserSettings>> GetSettingsByUserIdAsync(int userId)
     {
@@ -593,7 +597,7 @@ public class UsersServices : IUsersServices
             );
         }
 
-        return Result<UserSettings>.Success(result.Value);
+        return Result<UserSettings>.Success(result.Value!);
     }
 
     public async Task<Result> UpdateUserSettingsAsync(UserSettings settings)
@@ -627,7 +631,7 @@ public class UsersServices : IUsersServices
 
         try
         {
-            existingSettings.UpdateSettings(settings.Theme, settings.Language, settings.ReceiveNotifications);
+            existingSettings!.UpdateSettings(settings.Theme, settings.Language, settings.ReceiveNotifications);
             await _unitOfWork.UserSettings.UpdateAsync(existingSettings);
             await _unitOfWork.CommitAsync();
 
@@ -702,11 +706,7 @@ public class UsersServices : IUsersServices
                 Error.InternalServer($"Erro ao criar configurações padrão: {ex.Message}")
             );
         }
-    }
-
-    // -------------------------------------------------------------------------
-    // ROLES
-    // -------------------------------------------------------------------------
+    }    
 
     public async Task<Result<UsersRole>> CreateUsersRoleAsync(UsersRole dto)
     {
@@ -763,7 +763,7 @@ public class UsersServices : IUsersServices
             );
         }
 
-        return Result<UsersRole>.Success(result.Value);
+        return Result<UsersRole>.Success(result.Value!);
     }
 
     public async Task<Result<UsersRole>> GetUsersRoleByNameAsync(string name)
@@ -779,7 +779,7 @@ public class UsersServices : IUsersServices
             );
         }
 
-        return Result<UsersRole>.Success(result.Value);
+        return Result<UsersRole>.Success(result.Value!);
     }
 
     public async Task<Result<IEnumerable<UsersRole>>> GetAllUsersRolesAsync()
@@ -788,7 +788,7 @@ public class UsersServices : IUsersServices
         if (!result.IsSuccessful)
             return Result<IEnumerable<UsersRole>>.Failure(result.Error);
 
-        return Result<IEnumerable<UsersRole>>.Success(result.Value);
+        return Result<IEnumerable<UsersRole>>.Success(result.Value!);
     }
 
     public async Task<Result> UpdateUsersRoleAsync(UsersRole updateRole)
@@ -814,7 +814,7 @@ public class UsersServices : IUsersServices
 
         try
         {
-            if (!existingRole.RoleName.Equals(updateRole.RoleName, StringComparison.Ordinal))
+            if (!existingRole!.RoleName.Equals(updateRole.RoleName, StringComparison.Ordinal))
             {
                 var duplicateResult = await _unitOfWork.UsersRole.GetByNameAsync(updateRole.RoleName);
                 if (duplicateResult.IsSuccessful)
@@ -862,9 +862,14 @@ public class UsersServices : IUsersServices
         }
     }
 
-    // -------------------------------------------------------------------------
-    // APROVAÇÃO / PENDENTES
-    // -------------------------------------------------------------------------
+    // NOVO: reutiliza o GetAllAsync genérico já herdado de
+    // IGenericRepository<Users>. Necessário para Clients.jsx conseguir
+    // listar todos os utilizadores (com filtro por role feito no frontend,
+    // à semelhança do padrão de filtros já usado em Leads.jsx).
+    public async Task<Result<IEnumerable<Users>>> GetAllUsersAsync()
+    {
+        return await _unitOfWork.Users.GetAllAsync();
+    }
 
     public async Task<Result<IEnumerable<Users>>> GetPendingUsersAsync()
     {
@@ -874,7 +879,7 @@ public class UsersServices : IUsersServices
             if (!result.IsSuccessful)
                 return Result<IEnumerable<Users>>.Failure(result.Error);
 
-            return Result<IEnumerable<Users>>.Success(result.Value);
+            return Result<IEnumerable<Users>>.Success(result.Value!);
         }
         catch (Exception ex)
         {
@@ -895,7 +900,7 @@ public class UsersServices : IUsersServices
             }
 
             var user = userResult.Value;
-            user.Approve();
+            user!.Approve();
 
             await _unitOfWork.Users.UpdateAsync(user);
             await _unitOfWork.CommitAsync();

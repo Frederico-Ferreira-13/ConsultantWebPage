@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../../context/useAuth';
-
-const API_BASE = 'http://localhost:5170/api';
+import { API_BASE_URL as API_BASE } from '../../config/api';
+import { ROLES } from '../../config/roles';
 
 function Section({ title, description, children }) {
   return (
@@ -101,7 +101,7 @@ export default function AdminSettings() {
       });
       if (res.ok) {
         const pending = await res.json();
-        setPendingUsers(pending.filter(u => u.usersRoleId !== 1));
+        setPendingUsers(pending.filter(u => u.usersRoleId !== ROLES.ADMIN));
       }
     } catch {
       // silencioso
@@ -415,3 +415,17 @@ export default function AdminSettings() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+

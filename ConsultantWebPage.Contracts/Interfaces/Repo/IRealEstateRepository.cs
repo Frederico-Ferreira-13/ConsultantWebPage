@@ -12,6 +12,7 @@ public interface IRealEstateRepository : IGenericRepository<RealEstate>
         int? categoryId, 
         decimal? minPrice, 
         decimal? maxPrice,
+        int? rooms,
         int page, 
         int pageSize);
 

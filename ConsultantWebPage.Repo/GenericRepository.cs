@@ -36,15 +36,13 @@ public abstract class GenericRepository<TEntity> : IGenericRepository<TEntity>
 
     public virtual async Task<Result> AddAsync(TEntity entity)
     {
-        await _dbSet.AddAsync(entity);
-        await _context.SaveChangesAsync();
+        await _dbSet.AddAsync(entity);        
         return Result.Success();
     }
 
     public virtual async Task<Result> UpdateAsync(TEntity entity)
     {
-        _dbSet.Update(entity);
-        await _context.SaveChangesAsync();
+        _dbSet.Update(entity);        
         return Result.Success();
     }
 
@@ -54,8 +52,7 @@ public abstract class GenericRepository<TEntity> : IGenericRepository<TEntity>
         if (entity == null)
             return Result.Failure(Error.NotFound("Registo não encontrado para eliminação."));
 
-        _dbSet.Remove(entity);
-        await _context.SaveChangesAsync();
+        _dbSet.Remove(entity);        
         return Result.Success();
     }
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_BASE_URL as API_BASE } from '../../config/api';
 
 const PROPERTY_TYPES = ['Apartamento', 'Moradia', 'Terreno', 'Escritório / Comercial', 'Outro'];
 const TYPOLOGIES = ['T0', 'T1', 'T2', 'T3', 'T4', 'T5+'];
@@ -45,6 +46,8 @@ export default function MarketStudy() {
     selectedDay: null, selectedTime: null,
   });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [estimate, setEstimate] = useState(null);
 
   const days = getNextDays(6);
@@ -66,9 +69,48 @@ export default function MarketStudy() {
     setStep(2);
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
-    setSubmitted(true);
+    setSubmitError('');
+    setSubmitting(true);
+
+    try {
+      // IMPLEMENTADO: antes só fazia setSubmitted(true) — não gravava nada.
+      // Agora envia o pedido para o PropertyEvaluationController já existente.
+      // ConsultantId fixo a 1 (consultor único atual) — substituir por lógica
+      // de distribuição quando essa funcionalidade for construída.
+      const clientContact = form.phone ? `${form.email} | ${form.phone}` : form.email;
+      const visitInfo = form.selectedDay && form.selectedTime
+        ? ` — Visita preferida: ${getDayName(form.selectedDay)} ${form.selectedDay.getDate()}/${form.selectedDay.getMonth() + 1} às ${form.selectedTime}`
+        : '';
+
+      const res = await fetch(`${API_BASE}/PropertyEvaluation`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          consultantId: 1,
+          userId: null,
+          clientName: form.name,
+          clientContact: clientContact + visitInfo,
+          propertyType: form.type,
+          address: form.zone,
+          typology: form.typology,
+          area: parseFloat(form.area),
+          condition: form.condition,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || 'Não foi possível agendar a reunião. Tente novamente.');
+      }
+
+      setSubmitted(true);
+    } catch (err) {
+      setSubmitError(err.message || 'Não foi possível agendar a reunião. Tente novamente.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const canSubmit = form.name && form.email && form.selectedDay && form.selectedTime;
@@ -162,8 +204,9 @@ export default function MarketStudy() {
               {/* Area + Zone */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs text-slate-400 mb-2 block">Área útil aproximada (m²)</label>
+                  <label className="text-xs text-slate-400 mb-2 block">Área útil aproximada (m²) *</label>
                   <input
+                    required
                     type="number" min="10" max="2000"
                     placeholder="Ex: 95"
                     value={form.area}
@@ -198,7 +241,7 @@ export default function MarketStudy() {
 
             <button
               type="submit"
-              disabled={!form.type || !form.typology || !form.condition || !form.zone}
+              disabled={!form.type || !form.typology || !form.condition || !form.zone || !form.area}
               className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl transition-all text-lg"
             >
               Ver estimativa de valor →
@@ -360,14 +403,19 @@ export default function MarketStudy() {
                 />
               </div>
 
+              {submitError && (
+                <p className="text-red-400 text-xs">{submitError}</p>
+              )}
               <button
                 onClick={handleSubmit}
-                disabled={!canSubmit}
+                disabled={!canSubmit || submitting}
                 className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold py-4 rounded-2xl transition-all"
               >
-                {form.selectedDay && form.selectedTime
-                  ? `Confirmar reunião — ${getDayName(form.selectedDay)} ${form.selectedDay.getDate()}/${form.selectedDay.getMonth() + 1} às ${form.selectedTime}`
-                  : 'Selecione dia e hora para agendar'}
+                {submitting
+                  ? 'A confirmar...'
+                  : form.selectedDay && form.selectedTime
+                    ? `Confirmar reunião — ${getDayName(form.selectedDay)} ${form.selectedDay.getDate()}/${form.selectedDay.getMonth() + 1} às ${form.selectedTime}`
+                    : 'Selecione dia e hora para agendar'}
               </button>
             </div>
 

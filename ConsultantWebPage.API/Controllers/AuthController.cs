@@ -32,7 +32,13 @@ public class AuthController : ControllerBase
  
         var result = await _authService.AuthenticateAsync(request.Identifier, request.Password);
         if (!result.IsSuccessful)
+        {
+             if (result.ErrorCode == ErrorCodes.AuthForbidden)
+                return StatusCode(403, result.Message);
+                
             return Unauthorized(result.Message);
+        }
+            
  
         var user = result.Value!;
         var tokenResponse = _tokenService.GenerateToken(user);

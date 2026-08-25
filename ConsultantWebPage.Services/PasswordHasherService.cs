@@ -40,7 +40,7 @@ public class PasswordHasherService : IPasswordHasherService
         }
     }
 
-    public bool VerifyPassword(string storedHash, string passwordToVerify, string salt)
+    public bool VerifyPassword(string storedHash, string passwordToVerify)
     {
         if (string.IsNullOrEmpty(storedHash) || string.IsNullOrEmpty(passwordToVerify))
         {

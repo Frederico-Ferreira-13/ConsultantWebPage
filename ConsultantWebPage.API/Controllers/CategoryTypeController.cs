@@ -1,4 +1,5 @@
 using ConsultantWebPage.Contracts.Interfaces.Services;
+using ConsultantWebPage.Core.Common;
 using ConsultantWebPage.Core.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -49,7 +50,7 @@ public class CategoryTypeController : ControllerBase
         return NotFound(result.Message);
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateCategoryTypeRequest request)
     {
@@ -63,7 +64,7 @@ public class CategoryTypeController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = result.Value!.CategoryTypeId }, result.Value);
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateCategoryTypeRequest request)
     {
@@ -84,7 +85,7 @@ public class CategoryTypeController : ControllerBase
         return Ok(result.Value);
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {

@@ -157,4 +157,14 @@ public class PropertyEvaluationServices : IPropertyEvaluationServices
                 Error.InternalServer($"Ocorreu um erro ao eliminar a avaliação: {ex.Message}"));
         }
     }
+
+    public async Task<Result<IEnumerable<PropertyEvaluations>>> GetAllEvaluationsAsync()
+    {
+        var result = await _unitOfWork.PropertiesEvaluations.GetAllAsync();
+        if (!result.IsSuccessful)
+            return Result<IEnumerable<PropertyEvaluations>>.Failure(
+                Error.InternalServer(result.Message ?? "Erro ao obter a lista de avaliações."));
+
+        return Result<IEnumerable<PropertyEvaluations>>.Success(result.Value ?? Enumerable.Empty<PropertyEvaluations>());
+    }
 }

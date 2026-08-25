@@ -1,6 +1,7 @@
 using ConsultantWebPage.Contracts.Interfaces.Services;
 using ConsultantWebPage.Core.Models;
 using ConsultantWebPage.Core.Models.ValueObjects;
+using ConsultantWebPage.Core.Common;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 
@@ -17,8 +18,20 @@ public class PropertyEvaluationController : ControllerBase
         _propertyEvaluationService = propertyEvaluationServices;
     }
 
-    [Authorize]
-    [HttpGet("{userId:int}")]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await _propertyEvaluationService.GetAllEvaluationsAsync();
+
+        if (result.IsSuccessful)
+            return Ok(result.Value);
+
+        return BadRequest(result.Message);
+    }
+
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id)
     {
         var result = await _propertyEvaluationService.GetEvaluationDetailsAsync(id);        
@@ -29,7 +42,7 @@ public class PropertyEvaluationController : ControllerBase
         return BadRequest(result.Message); 
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpGet("consultant/{consultantId:int}/pending")]
     public async Task<IActionResult> GetPending(int consultantId)
     {
@@ -57,7 +70,8 @@ public class PropertyEvaluationController : ControllerBase
                 request.Typology ?? string.Empty,
                 request.Area,
                 request.Condition ?? string.Empty,
-                request.UserId
+                request.UserId,
+                request.VisitPreference
             );
         }    
         catch (ArgumentException ex)
@@ -73,7 +87,7 @@ public class PropertyEvaluationController : ControllerBase
         return StatusCode(201, new { message = "Pedido de avaliação enviado com sucesso." });
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpPatch("{id:int}/status")]
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] PropertyEvaluationUpdateStatusRequest request)
     {
@@ -90,7 +104,7 @@ public class PropertyEvaluationController : ControllerBase
         return NoContent();
     }
 
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
@@ -111,7 +125,8 @@ public record RequestEvaluationRequest(
     string? Address,
     string? Typology,
     decimal Area,
-    string? Condition
+    string? Condition,
+    string? VisitPreference
 );
 
 public record PropertyEvaluationUpdateStatusRequest(string NewStatus);

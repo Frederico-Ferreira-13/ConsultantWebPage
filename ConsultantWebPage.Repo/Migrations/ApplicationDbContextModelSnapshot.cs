@@ -136,8 +136,10 @@ namespace ConsultantWebPage.Repo.Migrations
 
                     b.Property<string>("DistrictName")
                         .IsRequired()
+                        .ValueGeneratedOnAdd()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(100)")
+                        .HasDefaultValue("");
 
                     b.HasKey("CityId");
 

@@ -16,7 +16,6 @@ public class LeadsServices : ILeadsServices
     {
         _unitOfWork = unitOfWork;
     }
-
     
     public async Task<Result<Leads>> GetLeadByIdAsync(int leadId)
     {

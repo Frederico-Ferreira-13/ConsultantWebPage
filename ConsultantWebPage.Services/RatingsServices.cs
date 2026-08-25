@@ -131,7 +131,10 @@ public class RatingsServices : IRatingsServices
                     "O ID do consultor é inválido.",
                     new Dictionary<string, string[]> { { nameof(consultantId), new[] { "Deve ser maior que zero" } } }));
 
-        return await _unitOfWork.Rating.GetAverageRatingAsync(consultantId);
+        // CORRIGIDO: chamava GetAverageRatingAsync(consultantId), que filtra por RealEstateId,
+        // não por ConsultantId — devolvia sempre valores sem sentido. Agora usa o método
+        // dedicado do repositório, que faz join correto com RealEstate.ConsultantId.
+        return await _unitOfWork.Rating.GetAverageRatingForConsultantAsync(consultantId);
     }
 
     public async Task<Result> DeleteRatingAsync(int ratingId)

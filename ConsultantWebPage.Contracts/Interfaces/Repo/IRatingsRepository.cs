@@ -11,6 +11,8 @@ public interface IRatingsRepository : IGenericRepository<Ratings>
     Task<Result<IEnumerable<Ratings>>> GetByRealEstateIdAsync(int realEstateId);
     Task<Result<double>> GetAverageRatingAsync(int realEstateId);
 
+    Task<Result<double>> GetAverageRatingForConsultantAsync(int consultantId);
+
     Task<bool> HasUserRatedAsync(int userId, int realEstateId);
     Task<Result> UpsertRatingAsync(int userId, int realEstateId, int stars);
 }

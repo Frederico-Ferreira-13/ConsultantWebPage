@@ -35,4 +35,6 @@ public interface IUsersServices
 
     Task<Result<IEnumerable<Users>>> GetPendingUsersAsync();
     Task<Result<bool>> ApproveUserAsync(int userId);
+
+    Task<Result<IEnumerable<Users>>> GetAllUsersAsync();
 }

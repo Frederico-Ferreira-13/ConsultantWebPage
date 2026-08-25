@@ -42,13 +42,4 @@ public class TestimonialsRepository : GenericRepository<Testimonials>, ITestimon
 
         return Result<IEnumerable<Testimonials>>.Success(pendingApprovalTestimonials);
     }
-
-    public async Task<Result<IEnumerable<Testimonials>>> GetByRealEstateIdAsync(int realEstateId)
-    {
-        var testimonials = await _context.Testimonials
-            .Where(t => t.TestimonialId == realEstateId)
-            .ToListAsync();
-
-        return Result<IEnumerable<Testimonials>>.Success(testimonials);
-    }
 }

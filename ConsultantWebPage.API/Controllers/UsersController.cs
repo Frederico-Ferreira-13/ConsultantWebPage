@@ -1,4 +1,5 @@
 using ConsultantWebPage.Contracts.Interfaces.Services;
+using ConsultantWebPage.Core.Common;
 using ConsultantWebPage.Core.Models;
 using ConsultantWebPage.Core.Models.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
@@ -15,6 +16,17 @@ public class UsersController : ControllerBase
     public UsersController(IUsersServices usersService)
     {
         _usersService = usersService;
+    }
+
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var result = await _usersService.GetAllUsersAsync();
+        if (result.IsSuccessful)
+            return Ok(result.Value!.Select(UserResponse.FromEntity));
+
+        return BadRequest(result.Message);
     }
 
     // GET api/users/{id}
@@ -39,22 +51,22 @@ public class UsersController : ControllerBase
     {
         var result = await _usersService.GetCurrentUserAsync();
         if (result.IsSuccessful)
-            return Ok(result.Value);
-
+            return Ok(UserResponse.FromEntity(result.Value!));
+ 
         return Unauthorized(result.Message);
     }
 
     // GET api/users/pending
     // Lista utilizadores pendentes de aprovação → GET com sub-rota descritiva
     // Só admins devem aceder a esta rota
-    [Authorize]
+    [Authorize(Roles = AppRoles.AdminOrConsultant)]
     [HttpGet("pending")]
     public async Task<IActionResult> GetPending()
     {
         var result = await _usersService.GetPendingUsersAsync();
         if (result.IsSuccessful)
-            return Ok(result.Value);
-
+            return Ok(result.Value!.Select(UserResponse.FromEntity));
+ 
         return BadRequest(result.Message);
     }
 
@@ -73,7 +85,7 @@ public class UsersController : ControllerBase
 
     // GET api/users/exists/username?username=...
     // Verifica se username já existe → GET com query string
-    [HttpGet("exists/username")]
+     [HttpGet("exists/username")]
     public async Task<IActionResult> CheckUsernameUnique([FromQuery] string username)
     {
         if (string.IsNullOrWhiteSpace(username))
@@ -99,7 +111,8 @@ public class UsersController : ControllerBase
         if (!result.IsSuccessful)
             return BadRequest(result.Message);
 
-        return CreatedAtAction(nameof(GetById), new { id = result.Value!.UserId }, result.Value);
+         return CreatedAtAction(nameof(GetById), new { id = result.Value!.UserId }, 
+            UserResponse.FromEntity(result.Value!));
     }
 
     // PUT api/users/{id}
@@ -111,17 +124,17 @@ public class UsersController : ControllerBase
         var currentResult = await _usersService.GetUserByIdAsync(id);
         if (!currentResult.IsSuccessful)
             return NotFound("Utilizador não encontrado.");
-
+ 
         var user = currentResult.Value!;
-
+ 
         try
         {
             user.UpdateUserName(request.UserName);
             user.UpdateSocialLinks(request.FacebookUrl, request.InstagramUrl, request.XUrl);
-
+ 
             if (request.ProfilePicture != null)
                 user.UpdateProfilePicture(request.ProfilePicture);
-
+ 
             if (request.Email != null || request.Phone != null)
             {
                 var contactResult = ContactInfo.Create(
@@ -130,7 +143,7 @@ public class UsersController : ControllerBase
                 );
                 if (!contactResult.IsSuccessful)
                     return BadRequest(contactResult.Message);
-
+ 
                 user.UpdateContact(contactResult.Value!);
             }
         }
@@ -142,12 +155,12 @@ public class UsersController : ControllerBase
         {
             return BadRequest(ex.Message);
         }
-
+ 
         var result = await _usersService.UpdateUserProfileAsync(user);
         if (!result.IsSuccessful)
             return BadRequest(result.Message);
-
-        return Ok(user);
+ 
+        return Ok(UserResponse.FromEntity(user));
     }
 
     // PATCH api/users/{id}/password
@@ -158,24 +171,24 @@ public class UsersController : ControllerBase
     {
         if (string.IsNullOrWhiteSpace(request.OldPassword) || string.IsNullOrWhiteSpace(request.NewPassword))
             return BadRequest("Password antiga e nova são obrigatórias.");
-
+ 
         var result = await _usersService.ChangeUserPasswordAsync(id, request.OldPassword, request.NewPassword);
         if (!result.IsSuccessful)
             return BadRequest(result.Message);
-
+ 
         return NoContent(); // 204 — password alterada com sucesso
     }
 
     // PATCH api/users/{id}/approve
     // Aprovação de utilizador → PATCH porque só IsApproved muda
-    [Authorize]
+    [Authorize(Roles = AppRoles.Admin)]
     [HttpPatch("{id:int}/approve")]
     public async Task<IActionResult> Approve(int id)
     {
         var result = await _usersService.ApproveUserAsync(id);
         if (!result.IsSuccessful)
             return NotFound(result.Message);
-
+ 
         return NoContent(); // 204 — aprovação bem sucedida
     }
 
@@ -194,7 +207,7 @@ public class UsersController : ControllerBase
 
     // PATCH api/users/{id}/activate
     // Reativar utilizador → PATCH porque só IsActive muda
-    [Authorize]
+    [Authorize(Roles = AppRoles.Admin)]
     [HttpPatch("{id:int}/activate")]
     public async Task<IActionResult> Activate(int id)
     {
@@ -216,7 +229,40 @@ public class UsersController : ControllerBase
             return NotFound(result.Message);
 
         return NoContent(); // 204 — eliminado com sucesso
-    }
+    }    
+}
+
+public record UserResponse(
+    int UserId,
+    int UsersRoleId,
+    string FullName,
+    string UserName,
+    string Email,
+    string? Phone,
+    bool IsActive,
+    bool IsApproved,
+    string? ProfilePicture,
+    string? FacebookUrl,
+    string? InstagramUrl,
+    string? XUrl,
+    DateTime CreatedAt
+)
+{
+    public static UserResponse FromEntity(Users user) => new(
+        user.UserId,
+        user.UsersRoleId,
+        user.FullName,
+        user.UserName,
+        user.Contact.Email,
+        user.Contact.PhoneNumber,
+        user.IsActive,
+        user.IsApproved,
+        user.ProfilePicture,
+        user.FacebookUrl,
+        user.InstagramUrl,
+        user.XUrl,
+        user.CreatedAt
+    );
 }
 
 public record RegisterUserRequest(

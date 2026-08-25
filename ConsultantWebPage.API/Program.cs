@@ -14,12 +14,9 @@ using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- 1. CONFIGURAÇÃO DA BASE DE DADOS ---
-// Certifica-te que a ConnectionString no appsettings.Development.json está correta
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// --- 2. REGISTO DOS REPOSITÓRIOS ---
 builder.Services.AddScoped<IAboutMeRepository, AboutMeRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ICategoryTypeRepository, CategoryTypeRepository>();
@@ -39,13 +36,9 @@ builder.Services.AddScoped<IUsersRepository, UsersRepository>();
 builder.Services.AddScoped<IUsersRoleRepository, UsersRoleRepository>();
 builder.Services.AddScoped<IUserSettingRepository, UserSettingRepository>();
 
-// Adiciona os outros se o teu colega os terminar (RealEstate, etc.)
 
-// --- 3. REGISTO DA UNIT OF WORK ---
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-// --- 4. REGISTO DOS TEUS SERVIÇOS (Injeção de Dependência) ---
-// Usando os nomes com "Services" (plural) para bater certo com as interfaces do teu colega
 builder.Services.AddScoped<IAboutMeServices, AboutMeServices>();
 builder.Services.AddScoped<IAuthenticationService, AuthenticationService>();
 builder.Services.AddScoped<ICategoryServices, CategoryServices>();
@@ -82,7 +75,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
             ValidAudience = builder.Configuration["JwtSettings:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecurityKey"]))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["JwtSettings:SecurityKey"])),
+            
+            ClockSkew = TimeSpan.FromMinutes(5)      
         };
     });   
 
@@ -98,7 +93,12 @@ builder.Services.AddCors(options => {
 });
 
 builder.Services.AddControllers()
-    .AddApplicationPart(typeof(ConsultantWebPage.API.Controllers.RealEstateController).Assembly);
+    .AddApplicationPart(typeof(ConsultantWebPage.API.Controllers.RealEstateController).Assembly)
+    .AddJsonOptions(options =>
+    {
+        // Esta linha diz ao .NET: "Se encontrares um ciclo, para e não tentes serializar a sub-propriedade"
+        options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
+    });
 
 // --- 5. CONFIGURAÇÃO BASE DA API ---
 builder.Services.AddControllers(); 
@@ -128,7 +128,6 @@ builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
-// --- 6. PIPELINE DE EXECUÇÃO ---
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

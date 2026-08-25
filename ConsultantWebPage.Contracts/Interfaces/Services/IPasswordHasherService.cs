@@ -7,5 +7,5 @@ public interface IPasswordHasherService
 {
     string GenerateSalt();
     Result<HashResult> HashPassword(string password, string salt);
-    bool VerifyPassword(string storedHash, string passwordToVerify, string salt);
+    bool VerifyPassword(string storedHash, string passwordToVerify);
 }
